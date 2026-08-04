@@ -20,15 +20,19 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ossie_hex.hex_extension import HEX_VENDOR
+
 
 def hex_extension(node: dict[str, Any]) -> dict[str, Any] | None:
     """The HEX custom-extension payload attached to an Ossie node."""
-    extensions = node.get("custom_extensions")
-    if not extensions:
-        return None
-    payload = json.loads(extensions[0]["data"])
-    assert isinstance(payload, dict)
-    return payload
+    extensions = node.get("custom_extensions") or []
+    for ext in extensions:
+        if ext.get("vendor_name") != HEX_VENDOR:
+            continue
+        payload = json.loads(ext.get("data") or "{}")
+        assert isinstance(payload, dict)
+        return payload
+    return None
 
 
 def field_ossie(*, datatype: str | None, is_time: bool | None) -> str:

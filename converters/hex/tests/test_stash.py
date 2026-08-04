@@ -47,8 +47,20 @@ from ossie_hex.hex_types import (
     HexVisibility,
 )
 from ossie_hex.util.errors import ConversionError
+from tests.utils import hex_extension
 
 # region: Read
+
+
+def test_hex_extension_finds_hex_vendor_after_other_extensions() -> None:
+    node = {
+        "custom_extensions": [
+            {"vendor_name": "DBT", "data": '{"type": "wrong"}'},
+            {"vendor_name": HEX_VENDOR, "data": '{"type": "number"}'},
+        ]
+    }
+
+    assert hex_extension(node) == {"type": "number"}
 
 
 def test_read_stash_ignores_other_vendors() -> None:
