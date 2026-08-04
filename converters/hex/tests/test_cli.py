@@ -21,6 +21,14 @@ import pytest
 import yaml
 
 from ossie_hex.cli import main
+from ossie_hex.ossie_types.ossie_common import OSSIE_DIALECTS
+
+
+def assert_invalid_dialect_error(message: str) -> None:
+    assert "error: argument -d/--dialect: invalid choice: 'invalid'" in message
+    assert "choose from" in message
+    for dialect in [d.lower() for d in OSSIE_DIALECTS]:
+        assert dialect in message
 
 
 def test_cli_import_export(minimal_hex_path: str, tmp_path: Path) -> None:
@@ -92,10 +100,7 @@ def test_cli_export_invalid_dialect(
     assert exc.value.code == 2
     message = capsys.readouterr().err
     print(message)
-    assert (
-        "error: argument -d/--dialect: invalid choice: 'invalid' (choose from ansi_sql, snowflake, mdx, maql, tableau, databricks, bigquery)"
-        in message
-    )
+    assert_invalid_dialect_error(message)
 
 
 def test_cli_import_invalid_dialect(
@@ -106,7 +111,4 @@ def test_cli_import_invalid_dialect(
 
     assert exc.value.code == 2
     message = capsys.readouterr().err
-    assert (
-        "error: argument -d/--dialect: invalid choice: 'invalid' (choose from ansi_sql, snowflake, mdx, maql, tableau, databricks, bigquery)"
-        in message
-    )
+    assert_invalid_dialect_error(message)

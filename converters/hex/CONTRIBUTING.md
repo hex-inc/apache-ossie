@@ -141,13 +141,28 @@ uv run pytest --inline-snapshot=review
 uv run pytest --inline-snapshot=fix
 ```
 
-Inspect the resulting diffs before committing. Do not pass snapshot-update
-flags in CI; a normal `uv run pytest` must fail when snapshots drift.
+Inspect the resulting diffs before committing. Do not pass snapshot-update flags in CI; a normal `uv run pytest` must fail when snapshots drift.
 
 ### CI/CD
 
 CI runs installation, linting, formatting, and testing on Python 3.11 through 3.14 using
 `.github/workflows/converter-hex-ci.yml`.
+
+To reproduce the CI Python version matrix locally, first install the supported
+interpreters with a current `uv` release, then run each test suite in an isolated
+environment:
+
+```bash
+uv python install 3.11 3.12 3.13 3.14
+
+for python_version in 3.11 3.12 3.13 3.14; do
+  uv run --isolated --python "${python_version}" pytest || exit 1
+done
+```
+
+The isolated environments leave the project's `.venv` unchanged. Keep `uv`
+up to date so version selectors resolve to stable Python releases rather than
+an older prerelease installation.
 
 ## Building distributions
 
