@@ -26,6 +26,7 @@ dev = [
     "syrupy>=4.0",
     "inline-snapshot>=0.23",
     "rumdl>=0.2.50",
+    "poethepoet>=0.48.0",
 ]
 
 [project]
@@ -71,6 +72,20 @@ flavor = "gfm"
 
 [tool.rumdl.MD013]
 reflow = true
+
+[tool.poe.tasks]
+check = [
+    { cmd = "ruff check src tests" },
+    { cmd = "ruff format --check src tests" },
+    { cmd = "rumdl check ." },
+    { cmd = "rumdl fmt --check ." },
+]
+format = [
+    { cmd = "ruff check --fix src tests" },
+    { cmd = "ruff format src tests" },
+    { cmd = "rumdl fmt ." },
+]
+test = "pytest"
 
 [tool.pyright]
 include = ["src", "tests"]

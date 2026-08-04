@@ -78,34 +78,21 @@ either direction:
 
 ## Verification
 
-Lint and check formatting:
+Run the following commands to verify your changes.
 
 ```bash
-uv run ruff check
-uv run ruff format --check
-uv run rumdl check .
-uv run rumdl fmt --check .
-```
+# lint and formatting checks
+uv run poe check
 
-Apply automatic fixes and formatting:
+# apply automatic fixes for lint and formatting issues
+uv run poe format
 
-```bash
-uv run ruff check --fix
-uv run ruff format
-uv run rumdl fmt .
-```
+# run complete test suite
+uv run poe test
 
-### Testing
-
-Run the complete converter test suite or a single file or test while iterating:
-
-```bash
-# complete test suite
-uv run pytest
-
-# single file/test
-uv run pytest tests/<file>.py
-uv run pytest tests/<file>.py::<test>
+# run a single file or test
+uv run poe test tests/<file>.py
+uv run poe test tests/<file>.py::<test>
 ```
 
 ### CLI
