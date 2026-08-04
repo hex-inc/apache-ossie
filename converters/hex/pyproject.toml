@@ -25,6 +25,7 @@ dev = [
     "ruff>=0.16.0",
     "syrupy>=4.0",
     "inline-snapshot>=0.23",
+    "rumdl>=0.2.50",
 ]
 
 [project]
@@ -64,6 +65,12 @@ pythonpath = ["src"]
 
 [tool.ruff]
 target-version = "py311"
+
+[tool.rumdl]
+flavor = "gfm"
+
+[tool.rumdl.MD013]
+reflow = true
 
 [tool.pyright]
 include = ["src", "tests"]

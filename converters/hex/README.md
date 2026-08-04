@@ -21,25 +21,32 @@
 
 # Ossie ↔ Hex converter
 
-Bidirectional, offline conversion between [Apache Ossie](https://ossie.apache.org/) and [Hex](https://learn.hex.tech/docs/connect-to-data/semantic-models/semantic-authoring/modeling-specification).
+Bidirectional, offline conversion between
+[Apache Ossie](https://ossie.apache.org/) and
+[Hex](https://learn.hex.tech/docs/connect-to-data/semantic-models/semantic-authoring/modeling-specification).
 
 - **Export** (`ossie-hex export`): Ossie → Hex
 - **Import** (`ossie-hex import`): Hex → Ossie
 
-A Hex semantic project is a directory of YAML resource files (models and views). This converter maps an Ossie semantic model to/from that layout.
+A Hex semantic project is a directory of YAML resource files (models and views).
+This converter maps an Ossie semantic model to/from that layout.
 
-During export, datasets and fields become models and dimensions, relationships become per-model relations, and metrics become per-model measures. Import performs the reverse conversion.
+During export, datasets and fields become models and dimensions, relationships
+become per-model relations, and metrics become per-model measures. Import
+performs the reverse conversion.
 
 **Hex → Ossie → Hex is lossless<sup>†</sup>.** The reverse is not.
 
-<sup>†</sup> Lossless in the semantic sense. Syntactic sugar may be lost, but the underlying SQL is preserved.
+<sup>†</sup> Lossless in the semantic sense. Syntactic sugar may be lost, but
+the underlying SQL is preserved.
 
 Invalid input raises a `ConversionError`. Anything Hex cannot represent is
 reported as a warning rather than dropped quietly.
 
 ## Installation
 
-This converter is distributed as a Python package. Install it with `uv` or `pip`:
+This converter is distributed as a Python package. Install it with `uv` or
+`pip`:
 
 ```bash
 uv tool install ossie-hex
@@ -68,10 +75,16 @@ ossie-hex export -i <file> -o <directory> \
 Options:
 
 - `-i, --input <file>` — Required. Ossie YAML file to export.
-- `-o, --output <directory>` — Required. Directory where Hex YAML files are written.
-- `--model <name>` — Optional. Ossie semantic model to export. If omitted, the first model is exported and a warning is emitted when the document contains multiple models.
-- `--base-model <dataset>` — Optional. Dataset to receive metrics that cannot be attributed to a single dataset.
-- `-d, --dialect <dialect>` — Optional. Ossie dialect to pick from Ossie expressions. If omitted, the dialect the document declares is used, falling back to `ANSI_SQL`.
+- `-o, --output <directory>` — Required. Directory where Hex YAML files are
+  written.
+- `--model <name>` — Optional. Ossie semantic model to export. If omitted, the
+  first model is exported and a warning is emitted when the document contains
+  multiple models.
+- `--base-model <dataset>` — Optional. Dataset to receive metrics that cannot be
+  attributed to a single dataset.
+- `-d, --dialect <dialect>` — Optional. Ossie dialect to pick from Ossie
+  expressions. If omitted, the dialect the document declares is used, falling
+  back to `ANSI_SQL`.
 
 Example:
 
@@ -95,9 +108,14 @@ ossie-hex import -i <directory> --dialect <dialect> \
 Options:
 
 - `-i, --input <directory>` — Required. Directory containing the Hex YAML files.
-- `-d, --dialect <dialect>` — Required. Ossie dialect the project's SQL is written in. A Hex project does not record one, so the converted expressions can only be tagged with what you supply here, and it becomes the document's declared dialect.
-- `-o, --output <file>` — Optional. Ossie YAML output file. If omitted, output is written to stdout.
-- `--name <name>` — Optional. Name to assign to the imported Ossie model. If omitted, the project directory name is used.
+- `-d, --dialect <dialect>` — Required. Ossie dialect the project's SQL is
+  written in. A Hex project does not record one, so the converted expressions
+  can only be tagged with what you supply here, and it becomes the document's
+  declared dialect.
+- `-o, --output <file>` — Optional. Ossie YAML output file. If omitted, output
+  is written to stdout.
+- `--name <name>` — Optional. Name to assign to the imported Ossie model. If
+  omitted, the project directory name is used.
 
 Examples:
 
@@ -128,7 +146,8 @@ hex_files, warnings = convert_ossie_to_hex(ossie_yaml)  # {file name: YAML str}
 
 ## Problems
 
-Conversion raises a `ConversionError` when the process cannot produce reasonable output:
+Conversion raises a `ConversionError` when the process cannot produce reasonable
+output:
 
 In Hex → Ossie,
 
@@ -151,7 +170,12 @@ Conversion emits a `ConversionWarning` when the output is lossy:
 
 ### Concepts
 
-The table below shows how Ossie and Hex concepts correspond, and where a concept in one format has no direct equivalent in the other. Backticks identify literal fields in each format. Where a concept exists in Hex but is not supported in Ossie, then data is preserved in the `HEX` custom extension on import. Where a concept exists in Ossie but is not supported in Hex, then data is omitted on export.
+The table below shows how Ossie and Hex concepts correspond, and where a concept
+in one format has no direct equivalent in the other. Backticks identify literal
+fields in each format. Where a concept exists in Hex but is not supported in
+Ossie, then data is preserved in the `HEX` custom extension on import. Where a
+concept exists in Ossie but is not supported in Hex, then data is omitted on
+export.
 
 | Concept                   | Ossie                                          | Hex                                                                      |
 | ------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------ |
@@ -180,7 +204,8 @@ The table below shows how Ossie and Hex concepts correspond, and where a concept
 
 ### Data types
 
-Data types translate between the two formats as follows, with notes where conversion is not one-to-one.
+Data types translate between the two formats as follows, with notes where
+conversion is not one-to-one.
 
 | Ossie `datatype` | Hex `type`        | Notes                                                |
 | ---------------- | ----------------- | ---------------------------------------------------- |
@@ -199,7 +224,10 @@ Data types translate between the two formats as follows, with notes where conver
 
 ### Custom extension
 
-Hex features that Ossie cannot express are preserved in an Ossie custom extension (vendor name `HEX`) so they survive a round trip. The extension data is a JSON object. Data contents are versioned with a key at the document's top-level custom extensions field. The keys used at each scope are listed below.
+Hex features that Ossie cannot express are preserved in an Ossie custom
+extension (vendor name `HEX`) so they survive a round trip. The extension data
+is a JSON object. Data contents are versioned with a key at the document's
+top-level custom extensions field. The keys used at each scope are listed below.
 
 | Scope          | Keys                                                                               |
 | -------------- | ---------------------------------------------------------------------------------- |

@@ -65,6 +65,13 @@ jobs:
           uv run ruff check src tests
           uv run ruff format --check src tests
 
+      - name: Markdown
+        if: matrix.python-version == '3.14'
+        working-directory: converters/hex
+        run: |
+          uv run rumdl check .
+          uv run rumdl fmt --check .
+
       - name: Unit Tests
         working-directory: converters/hex
         run: |

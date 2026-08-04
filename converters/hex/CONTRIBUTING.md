@@ -48,7 +48,8 @@ module per resource it converts, sitting on two shared layers:
   types
 - `src/ossie_hex/util/`: errors, warnings, YAML 1.2 load/dump, and SQL reference
   and join rewriting
-- `src/ossie_hex/cli/`: the `import` and `export` commands, and respective file i/o — conversion only manipulates text in memory
+- `src/ossie_hex/cli/`: the `import` and `export` commands, and respective file
+  i/o — conversion only manipulates text in memory
 
 Add or update fixtures under `tests/fixtures/` and keep conversion behavior
 covered in both directions. Hex-only information that has no Ossie equivalent
@@ -58,8 +59,8 @@ the same meaning.
 
 ### Useful knowledge
 
-Three invariants are easy to break and worth keeping in mind when changing either
-direction:
+Three invariants are easy to break and worth keeping in mind when changing
+either direction:
 
 - **Ossie names are not Hex IDs.** Ossie names are free-form; Hex IDs are
   lowercase and restricted. Every dataset and field name is resolved to its Hex
@@ -82,6 +83,8 @@ Lint and check formatting:
 ```bash
 uv run ruff check
 uv run ruff format --check
+uv run rumdl check .
+uv run rumdl fmt --check .
 ```
 
 Apply automatic fixes and formatting:
@@ -89,6 +92,7 @@ Apply automatic fixes and formatting:
 ```bash
 uv run ruff check --fix
 uv run ruff format
+uv run rumdl fmt .
 ```
 
 ### Testing
@@ -123,8 +127,9 @@ uv run ossie-hex export \
 
 ### Snapshots
 
-Full Hex/Ossie translations use [Syrupy](https://github.com/syrupy-project/syrupy)
-and live under `tests/__snapshots__/`. Smaller structured expectations use
+Full Hex/Ossie translations use
+[Syrupy](https://github.com/syrupy-project/syrupy) and live under
+`tests/__snapshots__/`. Smaller structured expectations use
 [inline-snapshot](https://15r10nk.github.io/inline-snapshot/) and are stored
 beside the assertion in the test source.
 
@@ -141,16 +146,17 @@ uv run pytest --inline-snapshot=review
 uv run pytest --inline-snapshot=fix
 ```
 
-Inspect the resulting diffs before committing. Do not pass snapshot-update flags in CI; a normal `uv run pytest` must fail when snapshots drift.
+Inspect the resulting diffs before committing. Do not pass snapshot-update flags
+in CI; a normal `uv run pytest` must fail when snapshots drift.
 
 ### CI/CD
 
-CI runs installation, linting, formatting, and testing on Python 3.11 through 3.14 using
-`.github/workflows/converter-hex-ci.yml`.
+CI runs installation, linting, formatting, and testing on Python 3.11 through
+3.14 using `.github/workflows/converter-hex-ci.yml`.
 
 To reproduce the CI Python version matrix locally, first install the supported
-interpreters with a current `uv` release, then run each test suite in an isolated
-environment:
+interpreters with a current `uv` release, then run each test suite in an
+isolated environment:
 
 ```bash
 uv python install 3.11 3.12 3.13 3.14
@@ -192,4 +198,5 @@ uv pip install --python /tmp/ossie-hex-release-test/bin/python dist/*.whl
 
 ## Publishing
 
-Publishing is deferred to the Apache Ossie project, which governs the broader release cycle. Contributors should not publish this package independently.
+Publishing is deferred to the Apache Ossie project, which governs the broader
+release cycle. Contributors should not publish this package independently.
