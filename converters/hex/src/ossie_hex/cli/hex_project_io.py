@@ -58,4 +58,6 @@ def write_hex_project(
     root = Path(project_dir)
     root.mkdir(parents=True, exist_ok=True)
     for name, text in files.items():
-        (root / name).write_text(text, encoding="utf-8")
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")

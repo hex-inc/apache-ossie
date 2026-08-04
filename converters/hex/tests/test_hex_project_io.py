@@ -54,6 +54,15 @@ def test_read_empty_project_errors(tmp_path: Path) -> None:
 def test_write_hex_project_creates_the_directories_it_needs(tmp_path: Path) -> None:
     project = tmp_path / "hex" / "project"
 
-    write_hex_project(project, {"orders.yml": "id: orders\n"})
+    write_hex_project(
+        project,
+        {
+            "orders.yml": "id: orders\n",
+            "models/customers.yml": "id: customers\n",
+        },
+    )
 
     assert (project / "orders.yml").read_text(encoding="utf-8") == "id: orders\n"
+    assert (project / "models" / "customers.yml").read_text(
+        encoding="utf-8"
+    ) == "id: customers\n"
