@@ -15,19 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from __future__ import annotations
+from hex_sl_utils.spec.types import DialectName
+from ossie import OSIDialect
 
-from enum import Enum
 
-
-class HexDataType(str, Enum):
-    """The abstract type of the data."""
-
-    NUMBER = "number"
-    STRING = "string"
-    TIMESTAMP_TZ = "timestamp_tz"
-    TIMESTAMP_NAIVE = "timestamp_naive"
-    DATE = "date"
-    BOOLEAN = "boolean"
-    NULL = "null"
-    OTHER = "other"
+def ossie_to_hex_dialect(dialect: OSIDialect) -> DialectName:
+    """Map Ossie's dialect vocabulary to the closest Hex SQL dialect."""
+    return {
+        OSIDialect.BIGQUERY: "bigquery",
+        OSIDialect.DATABRICKS: "databricks",
+        OSIDialect.SNOWFLAKE: "snowflake",
+    }.get(dialect, "duckdb")

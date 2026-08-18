@@ -40,7 +40,7 @@ def convert_hex_to_ossie(
 
     Returns ``(ossie_text, warnings)``.
     """
-    hex_project = load_hex_project(files, project_name=model_name)
+    hex_project = load_hex_project(files, project_name=model_name, dialect=dialect)
     document, warnings = convert_hex_project(hex_project, ossie_dialect=dialect)
     data = document.model_dump(by_alias=True, exclude_none=True, mode="json")
     return dump_yaml(data), warnings

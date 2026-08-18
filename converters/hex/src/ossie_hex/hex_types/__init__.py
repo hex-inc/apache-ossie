@@ -15,6 +15,78 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import re
+
+from hex_sl_utils.spec.types import (
+    DEFAULT_RESOURCE_TYPE as DEFAULT_HEX_RESOURCE_TYPE,
+)
+from hex_sl_utils.spec.types import (
+    DataType as HexDataType,
+)
+from hex_sl_utils.spec.types import (
+    Dimension as HexDimension,
+)
+from hex_sl_utils.spec.types import (
+    EntityId as HexID,
+)
+from hex_sl_utils.spec.types import (
+    Measure as HexMeasure,
+)
+from hex_sl_utils.spec.types import (
+    MeasureFuncName as HexMeasureFuncName,
+)
+from hex_sl_utils.spec.types import (
+    Model as HexModel,
+)
+from hex_sl_utils.spec.types import (
+    Project as HexProject,
+)
+from hex_sl_utils.spec.types import (
+    Relation as HexRelation,
+)
+from hex_sl_utils.spec.types import (
+    RelationType as HexRelationType,
+)
+from hex_sl_utils.spec.types import (
+    Resource as HexResource,
+)
+from hex_sl_utils.spec.types import (
+    ScalarExpression as HexScalarExpression,
+)
+from hex_sl_utils.spec.types import (
+    ScalarExpressionDefaultBoolean as HexScalarExpressionDefaultBoolean,
+)
+from hex_sl_utils.spec.types import (
+    ScalarExpressionDefaultNumber as HexScalarExpressionDefaultNumber,
+)
+from hex_sl_utils.spec.types import (
+    SemiAdditive as HexSemiAdditive,
+)
+from hex_sl_utils.spec.types import (
+    SemiAdditiveOverMember as HexSemiAdditiveOverMember,
+)
+from hex_sl_utils.spec.types import (
+    View as HexView,
+)
+from hex_sl_utils.spec.types import (
+    ViewContentDimensionItem as HexGroupDimension,
+)
+from hex_sl_utils.spec.types import (
+    ViewContentMeasureItem as HexGroupMeasure,
+)
+from hex_sl_utils.spec.types import (
+    ViewContentsGroup as HexGroup,
+)
+from hex_sl_utils.spec.types import (
+    Visibility as HexVisibility,
+)
+from hex_sl_utils.spec.types import (
+    id_to_name,
+)
+from hex_sl_utils.spec.types import (
+    parse_resource as parse_hex_resource,
+)
+
 from .datatype_mapping import (
     HEX_TO_OSSIE,
     LOSSLESS_HEX_TYPES,
@@ -23,44 +95,23 @@ from .datatype_mapping import (
     is_lossless_hex_type,
     is_temporal_hex_type,
 )
-from .hex_common import (
-    DEFAULT_HEX_VISIBILITY,
-    HexVisibility,
-    is_default_hex_visibility,
-)
-from .hex_datatype import HexDataType
-from .hex_dimension import HexDimension
-from .hex_expression import (
-    HEX_REF_PATTERN,
-    HEX_REF_RE,
-    HexScalarExpression,
-    HexScalarExpressionDefaultBoolean,
-    HexScalarExpressionDefaultNumber,
-)
+from .dialect_mapping import ossie_to_hex_dialect
 from .hex_id import (
     HEX_ID_PATTERN,
     HEX_ID_RE,
     HEX_RESERVED_ID_PREFIX,
     HEX_RESERVED_IDS,
-    HexID,
-    id_to_name,
     normalize_to_hex_id,
 )
-from .hex_measure import (
-    HexMeasure,
-    HexMeasureFuncName,
-    HexSemiAdditive,
-    HexSemiAdditiveOverMember,
-)
-from .hex_model import HexModel
-from .hex_project import HexProject
-from .hex_relation import HexRelation, HexRelationType
-from .hex_resource import (
-    DEFAULT_HEX_RESOURCE_TYPE,
-    HexResource,
-    parse_hex_resource,
-)
-from .hex_view import HexGroup, HexGroupDimension, HexGroupMeasure, HexView
+
+DEFAULT_HEX_VISIBILITY = HexVisibility.PUBLIC
+HEX_REF_PATTERN = r"\$\{\s*([^}]+?)\s*\}"
+HEX_REF_RE = re.compile(HEX_REF_PATTERN)
+
+
+def is_default_hex_visibility(visibility: HexVisibility) -> bool:
+    return visibility == DEFAULT_HEX_VISIBILITY
+
 
 __all__ = [
     "DEFAULT_HEX_RESOURCE_TYPE",
@@ -100,5 +151,6 @@ __all__ = [
     "is_lossless_hex_type",
     "is_temporal_hex_type",
     "normalize_to_hex_id",
+    "ossie_to_hex_dialect",
     "parse_hex_resource",
 ]

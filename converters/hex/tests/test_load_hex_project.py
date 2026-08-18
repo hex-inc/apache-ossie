@@ -15,26 +15,23 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from types import SimpleNamespace
+
 import pytest
+from ossie import OSIDialect
 
 from ossie_hex.hex_to_ossie.load_hex_project import load_hex_project
 from ossie_hex.util.errors import ConversionError
 
 
-def test_load_multi_document_yaml() -> None:
-    file = """id: messages
-base_sql_table: s.messages
----
-id: users
-base_sql_table: s.users
-"""
+def test_load_hex_project_uses_ossie_dialect() -> None:
     project = load_hex_project(
-        {"chat.yml": file},
-        project_name="chat",
+        {"orders.yml": "id: orders\nbase_sql_table: analytics.orders\n"},
+        project_name="demo",
+        dialect=OSIDialect.SNOWFLAKE,
     )
 
-    assert project.name == "chat"
-    assert {resource.id for resource in project.resources} == {"messages", "users"}
+    assert project.dialect.root == "snowflake"
 
 
 def test_load_hex_project_rejects_duplicate_ids() -> None:
@@ -47,6 +44,19 @@ def test_load_hex_project_rejects_duplicate_ids() -> None:
         load_hex_project(files, project_name="demo")
 
 
-def test_load_hex_project_rejects_non_mapping_document() -> None:
-    with pytest.raises(ConversionError, match="expected a mapping"):
-        load_hex_project({"invalid.yml": "- orders\n"}, project_name="demo")
+def test_load_hex_project_raises_loader_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    class LoaderProblem:
+        severity = "error"
+
+        def to_str(self) -> str:
+            return "[ERROR] Broken resource"
+
+    loader_result = SimpleNamespace(problems=[LoaderProblem()])
+
+    monkeypatch.setattr(
+        "ossie_hex.hex_to_ossie.load_hex_project.load_project_files",
+        lambda **_kwargs: loader_result,
+    )
+
+    with pytest.raises(ConversionError, match=r"\[ERROR\] Broken resource"):
+        load_hex_project({}, project_name="demo")

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from ossie import OSIDialect, OSIDocument, OSISemanticModel
 
-from ..hex_types import HexProject
+from ..hex_types import HexProject, ossie_to_hex_dialect
 from ..util.errors import ConversionError, ConversionWarning
 from .convert_ossie_semantic_model import convert_ossie_semantic_model
 
@@ -52,6 +52,7 @@ def convert_ossie_document(
     )
     hex_project = HexProject(
         name=ossie_semantic_model.name,
+        dialect=ossie_to_hex_dialect(ossie_dialect),
         resources=hex_resources,
     )
 

@@ -70,15 +70,6 @@ def load_yaml(text: str, what: str = "input") -> Any:
         raise ConversionError(f"Invalid YAML in {what}: {e}") from e
 
 
-def load_yaml_all(text: str, what: str = "input") -> list[Any]:
-    """Parse all YAML documents in a multi-document stream."""
-    try:
-        docs = list(yaml.load_all(text, Loader=_Yaml12Loader))
-    except yaml.YAMLError as e:
-        raise ConversionError(f"Invalid YAML in {what}: {e}") from e
-    return [doc for doc in docs if doc is not None]
-
-
 def dump_yaml(obj: Any) -> str:
     """Serialize to YAML with 1.2 boolean semantics."""
     return yaml.dump(

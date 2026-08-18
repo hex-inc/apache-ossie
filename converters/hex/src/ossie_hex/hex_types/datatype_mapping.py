@@ -17,9 +17,8 @@
 
 from __future__ import annotations
 
+from hex_sl_utils.spec.types import DataType as HexDataType
 from ossie import OSIDataType
-
-from .hex_datatype import HexDataType
 
 HEX_TO_OSSIE: dict[HexDataType, OSIDataType] = {
     HexDataType.STRING: OSIDataType.STRING,

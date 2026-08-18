@@ -17,17 +17,18 @@
 
 from __future__ import annotations
 
-from pydantic import ValidationError
+from hex_sl_utils.spec.load import load_project_files
+from ossie import OSIDialect
 
-from ..hex_types import HexProject, HexResource, parse_hex_resource
+from ..hex_types import HexProject, ossie_to_hex_dialect
 from ..util.errors import ConversionError
-from ..util.yaml import load_yaml_all
 
 
 def load_hex_project(
     files: dict[str, str],
     *,
     project_name: str,
+    dialect: OSIDialect = OSIDialect.ANSI_SQL,
 ) -> HexProject:
     """Interpret files as a Hex project.
 
@@ -36,31 +37,21 @@ def load_hex_project(
 
     Returns a `HexProject`.
     """
-    resources: list[HexResource] = []
-    seen_ids: set[str] = set()
-
-    for file_name, text in files.items():
-        docs = load_yaml_all(text, what=file_name)
-        for idx, doc in enumerate(docs):
-            if not isinstance(doc, dict):
-                raise ConversionError(
-                    f"{file_name} document {idx}: expected a mapping, "
-                    f"got {type(doc).__name__}"
-                )
-            try:
-                resource = parse_hex_resource(doc)
-            except ValidationError as e:
-                raise ConversionError(
-                    f"Invalid Hex resource in {file_name}: {e}"
-                ) from e
-            if resource.id in seen_ids:
-                raise ConversionError(
-                    f"Duplicate Hex resource id '{resource.id}' in {file_name}"
-                )
-            seen_ids.add(resource.id)
-            resources.append(resource)
-
-    return HexProject(
-        name=project_name,
-        resources=resources,
+    loaded = load_project_files(
+        files=files,
+        project_name=project_name,
+        dialect_name=ossie_to_hex_dialect(dialect),
     )
+    errors = [
+        problem for problem in loaded.problems if problem.severity in {"fatal", "error"}
+    ]
+    if errors:
+        raise ConversionError("\n\n".join(problem.to_str() for problem in errors))
+
+    seen_ids: set[str] = set()
+    for resource in loaded.project.resources:
+        if resource.id in seen_ids:
+            raise ConversionError(f"Duplicate Hex resource id '{resource.id}'")
+        seen_ids.add(resource.id)
+
+    return loaded.project

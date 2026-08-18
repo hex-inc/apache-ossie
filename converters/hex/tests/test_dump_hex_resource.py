@@ -17,7 +17,7 @@
 
 from inline_snapshot import snapshot as inline_snapshot
 
-from ossie_hex.hex_types import HexModel, HexView, parse_hex_resource
+from ossie_hex.hex_types import HexModel, HexView
 from ossie_hex.ossie_to_hex.dump_hex_resource import hex_resource_to_yaml
 from ossie_hex.util.yaml import load_yaml
 
@@ -94,4 +94,3 @@ def test_resource_to_yaml_preserves_view_type() -> None:
             "contents": [],
         }
     )
-    assert parse_hex_resource(data) == resource

@@ -18,61 +18,20 @@
 from __future__ import annotations
 
 import re
-from typing import Annotated
 
-from pydantic import AfterValidator, Field
-from pydantic_core import PydanticCustomError
-from typing_extensions import TypeAliasType
+from hex_sl_utils.spec.types import (
+    ID_PATTERN as HEX_ID_PATTERN,
+)
+from hex_sl_utils.spec.types import (
+    RESERVED_ID_PREFIX as HEX_RESERVED_ID_PREFIX,
+)
+from hex_sl_utils.spec.types import (
+    RESERVED_IDS as HEX_RESERVED_IDS,
+)
 
 from ..util.errors import ConversionError
 
-HEX_ID_PATTERN = r"^[a-z_][a-z0-9_]{1,127}$"
 HEX_ID_RE = re.compile(HEX_ID_PATTERN)
-
-HEX_RESERVED_IDS = ["this", "self", "dataset", "model", "view", "metric", "env"]
-HEX_RESERVED_ID_PREFIX = "_hex"
-
-
-def _exclude_reserved_ids(hex_id: str) -> str:
-    if hex_id in HEX_RESERVED_IDS:
-        raise PydanticCustomError(
-            "custom.string_disallowed",
-            "ID '{hex_id}' is a reserved term and cannot be used",
-            {"hex_id": hex_id},
-        )
-    if hex_id.startswith(HEX_RESERVED_ID_PREFIX):
-        raise PydanticCustomError(
-            "custom.string_disallowed",
-            "ID '{hex_id}' cannot begin with '{HEX_RESERVED_ID_PREFIX}'",
-            {"hex_id": hex_id, "HEX_RESERVED_ID_PREFIX": HEX_RESERVED_ID_PREFIX},
-        )
-    return hex_id
-
-
-HexID = TypeAliasType(
-    "HexID",
-    Annotated[
-        str,
-        Field(
-            title="HexID",
-            description=(
-                "An ID between 2 and 128 characters that begins with a lowercase "
-                "letter or underscore and contains only lowercase letters, "
-                "underscores, and numbers. The IDs ``this``, ``self``, ``dataset``, ``model``, ``view``, ``metric``, and ``env``, and IDs beginning with ``_hex``, are reserved."
-            ),
-            pattern=HEX_ID_PATTERN,
-            min_length=2,
-            max_length=128,
-        ),
-        AfterValidator(_exclude_reserved_ids),
-    ],
-)
-
-
-def id_to_name(hex_id: str) -> str:
-    words = hex_id.split("_")
-    words[0] = words[0].title()
-    return " ".join(words)
 
 
 def normalize_to_hex_id(name: str, what: str, taken: set[str]) -> str:
