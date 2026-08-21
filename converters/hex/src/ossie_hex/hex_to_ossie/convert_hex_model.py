@@ -22,11 +22,9 @@ from ossie import OSIDataset, OSIDialect, OSIField, OSIMetric, OSIRelationship
 from ..hex_extension import HexModelStash, maybe_write_extension
 from ..hex_types import HexDimension, HexMeasure, HexModel, HexRelation
 from ..util.errors import ConversionWarning
-from ..util.rewrite_refs import RefResolver
 from .convert_hex_dimension import convert_hex_dimension
 from .convert_hex_measure import convert_hex_measure
 from .convert_hex_relation import convert_hex_relation
-from .ref_resolver import export_ref_resolver
 
 
 def convert_hex_model(
@@ -34,7 +32,6 @@ def convert_hex_model(
     *,
     ossie_dialect: OSIDialect,
     metric_names: set[str],
-    dim_ids_by_model: dict[str, set[str]],
 ) -> tuple[OSIDataset, list[OSIMetric], list[OSIRelationship], list[ConversionWarning]]:
     """Convert a Hex model to an Ossie dataset and the document-level entries it adds."""
     warnings: list[ConversionWarning] = []
@@ -45,16 +42,9 @@ def convert_hex_model(
     (
         relationships,
         unsupported_relations,
-        relation_targets,
         relation_warnings,
     ) = convert_hex_model_relations(model)
     warnings.extend(relation_warnings)
-
-    resolve = export_ref_resolver(
-        model_id=model.id,
-        relation_targets=relation_targets,
-        dim_ids_by_model=dim_ids_by_model,
-    )
 
     (
         fields,
@@ -65,7 +55,6 @@ def convert_hex_model(
     ) = convert_hex_model_dimensions(
         model,
         ossie_dialect=ossie_dialect,
-        resolve=resolve,
     )
     warnings.extend(dimension_warnings)
 
@@ -106,13 +95,11 @@ def convert_hex_model_relations(
 ) -> tuple[
     list[OSIRelationship],
     list[HexRelation],
-    dict[str, str],
     list[ConversionWarning],
 ]:
-    """Convert a model's relations, and index the reachable ones by target model."""
+    """Convert a model's relations, preserving ones Ossie cannot express."""
     relationships: list[OSIRelationship] = []
     unsupported_relations: list[HexRelation] = []
-    relation_targets: dict[str, str] = {}
     warnings: list[ConversionWarning] = []
     for relation in model.relations:
         relationship, unsupported_relation, relation_warnings = convert_hex_relation(
@@ -121,18 +108,15 @@ def convert_hex_model_relations(
         warnings.extend(relation_warnings)
         if relationship is not None:
             relationships.append(relationship)
-            if relation.target != model.id:
-                relation_targets.setdefault(relation.target, relation.id)
         elif unsupported_relation is not None:
             unsupported_relations.append(unsupported_relation)
-    return relationships, unsupported_relations, relation_targets, warnings
+    return relationships, unsupported_relations, warnings
 
 
 def convert_hex_model_dimensions(
     model: HexModel,
     *,
     ossie_dialect: OSIDialect,
-    resolve: RefResolver,
 ) -> tuple[
     list[OSIField],
     list[HexDimension],
@@ -159,7 +143,6 @@ def convert_hex_model_dimensions(
             dim,
             model_id=model.id,
             ossie_dialect=ossie_dialect,
-            resolve=resolve,
         )
         warnings.extend(dimension_warnings)
         if field is not None:

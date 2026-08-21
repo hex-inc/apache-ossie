@@ -163,12 +163,10 @@ def test_stash_drops_values_matching_hex_defaults() -> None:
     stash = HexDimensionStash(
         type=HexDataType.NUMBER,  # lossless
         visibility=HexVisibility.PUBLIC,  # default
-        expr_sql="anything",
     )
 
     assert stash.type is None
     assert stash.visibility is None
-    assert stash.expr_sql == "anything"
 
 
 # endregion
@@ -222,7 +220,6 @@ def test_stash_drops_values_matching_hex_defaults() -> None:
         HexDimensionStash(
             type=HexDataType.NUMBER,
             visibility=HexVisibility.INTERNAL,
-            expr_sql="amount_usd",
         ),
         HexMeasureStash(
             model_id="orders",

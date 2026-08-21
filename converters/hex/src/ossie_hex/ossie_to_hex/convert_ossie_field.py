@@ -73,10 +73,6 @@ def convert_ossie_field(
                 f"expression; defaulting expr_sql to id"
             )
         )
-    elif stash is not None and stash.expr_sql is not None:
-        # The export only records an expression this rewrite cannot rebuild,
-        # so it is taken as authored rather than derived again.
-        dim["expr_sql"] = stash.expr_sql
     else:
         rebuilt = rebuild_hex_expr_sql(
             expr,

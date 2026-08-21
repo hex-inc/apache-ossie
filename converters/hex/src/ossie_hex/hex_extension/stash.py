@@ -112,8 +112,6 @@ class HexModelStash(_VisibilityMixin, _BaseHexStash):
 class HexDimensionStash(_TypeMixin, _VisibilityMixin, _BaseHexStash):
     """Preserves Hex dimension semantics that Ossie does not model."""
 
-    expr_sql: str | None = None
-
 
 class HexMeasureStash(_TypeMixin, _VisibilityMixin, _BaseHexStash):
     """Preserves Hex measure semantics that Ossie does not model."""

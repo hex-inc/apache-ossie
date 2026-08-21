@@ -56,12 +56,6 @@ def convert_hex_project(
     views_stash: list[HexViewStash] = []
     metric_names: set[str] = set()
 
-    dim_ids_by_model = {
-        resource.id: {dim.id for dim in resource.dimensions}
-        for resource in hex_project.resources
-        if isinstance(resource, HexModel)
-    }
-
     for resource in hex_project.resources:
         if isinstance(resource, HexView):
             view_stash, view_warnings = convert_hex_view(resource)
@@ -74,7 +68,6 @@ def convert_hex_project(
             resource,
             ossie_dialect=ossie_dialect,
             metric_names=metric_names,
-            dim_ids_by_model=dim_ids_by_model,
         )
         datasets.append(dataset)
         metrics.extend(ds_metrics)

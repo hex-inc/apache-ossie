@@ -22,9 +22,8 @@ from ossie import OSIDialect, OSIDialectExpression, OSIExpression, OSIField
 from ..hex_extension import HexDimensionStash, maybe_write_extension
 from ..hex_types import HexDimension
 from ..util.errors import ConversionWarning
-from ..util.rewrite_refs import RefResolver, hex_refs_to_ossie
+from ..util.rewrite_refs import hex_refs_to_ossie
 from .convert_hex_datatype import hex_to_ossie_datatype
-from .stash_expr_sql import ossie_expression_restores
 
 
 def convert_hex_dimension(
@@ -32,7 +31,6 @@ def convert_hex_dimension(
     *,
     model_id: str,
     ossie_dialect: OSIDialect,
-    resolve: RefResolver,
 ) -> tuple[OSIField | None, HexDimension | None, list[ConversionWarning]]:
     """Convert a Hex dimension to an Ossie field, or hand it back whole.
 
@@ -61,11 +59,6 @@ def convert_hex_dimension(
     stash = HexDimensionStash(
         type=dim.type,
         visibility=dim.visibility,
-        expr_sql=None
-        if ossie_expression_restores(
-            dim, expression_sql, model_id=model_id, resolve=resolve
-        )
-        else dim.expr_sql,
     )
 
     # Ossie doesn't have a clear "display name" field. While we export to ``label`` here,
