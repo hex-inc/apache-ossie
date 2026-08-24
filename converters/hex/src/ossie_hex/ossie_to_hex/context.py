@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+from ossie import OSIDialect
+
 from ..util.errors import ConversionWarning
 
 
@@ -25,6 +27,18 @@ class ConvertOssieCtx:
 
     def __init__(self) -> None:
         self.warnings: list[ConversionWarning] = []
+        self._ossie_dialect: OSIDialect | None = None
+
+    @property
+    def ossie_dialect(self) -> OSIDialect:
+        if self._ossie_dialect is None:
+            raise ValueError("No Ossie dialect has been selected")
+        return self._ossie_dialect
 
     def warn(self, message: str) -> None:
         self.warnings.append(ConversionWarning(message))
+
+    def set_ossie_dialect(self, dialect: OSIDialect) -> None:
+        if self._ossie_dialect is not None:
+            raise RuntimeError("An Ossie dialect has already been selected")
+        self._ossie_dialect = dialect

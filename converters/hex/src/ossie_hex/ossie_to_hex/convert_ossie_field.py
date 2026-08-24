@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Collection
 from typing import Any
 
-from ossie import OSIDialect, OSIField
+from ossie import OSIField
 
 from ..hex_extension import HexDimensionStash, read_stash
 from ..hex_types import (
@@ -40,7 +40,6 @@ def convert_ossie_field(
     *,
     dim_id: str,
     unique_names: Collection[str],
-    preferred_dialect: OSIDialect,
     dataset_id: str,
     dataset_name: str,
     resolve: RefResolver,
@@ -63,7 +62,7 @@ def convert_ossie_field(
         "type": hex_type,
     }
 
-    expr = pick_expression(field.expression, preferred=preferred_dialect)
+    expr = pick_expression(field.expression, preferred=ctx.ossie_dialect)
     if expr is None:
         ctx.warn(
             f"Field '{dataset_id}.{field.name}' has no usable dialect "

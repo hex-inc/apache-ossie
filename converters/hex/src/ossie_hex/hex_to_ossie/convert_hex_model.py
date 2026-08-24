@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-from ossie import OSIDataset, OSIDialect, OSIField, OSIMetric, OSIRelationship
+from ossie import OSIDataset, OSIField, OSIMetric, OSIRelationship
 
 from ..hex_extension import HexModelStash, maybe_write_extension
 from ..hex_types import HexDimension, HexMeasure, HexModel, HexRelation
@@ -30,7 +30,6 @@ from .convert_hex_relation import convert_hex_relation
 def convert_hex_model(
     model: HexModel,
     *,
-    ossie_dialect: OSIDialect,
     metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[OSIDataset, list[OSIMetric], list[OSIRelationship]]:
@@ -50,13 +49,11 @@ def convert_hex_model(
         unique_keys,
     ) = convert_hex_model_dimensions(
         model,
-        ossie_dialect=ossie_dialect,
         ctx=ctx,
     )
 
     metrics, unsupported_measures = convert_hex_model_measures(
         model,
-        ossie_dialect=ossie_dialect,
         metric_names=metric_names,
         ctx=ctx,
     )
@@ -110,7 +107,6 @@ def convert_hex_model_relations(
 def convert_hex_model_dimensions(
     model: HexModel,
     *,
-    ossie_dialect: OSIDialect,
     ctx: ConvertHexCtx,
 ) -> tuple[
     list[OSIField],
@@ -134,7 +130,6 @@ def convert_hex_model_dimensions(
         field, unsupported_dimension = convert_hex_dimension(
             dim,
             model_id=model.id,
-            ossie_dialect=ossie_dialect,
             ctx=ctx,
         )
         if field is not None:
@@ -159,7 +154,6 @@ def convert_hex_model_dimensions(
 def convert_hex_model_measures(
     model: HexModel,
     *,
-    ossie_dialect: OSIDialect,
     metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[list[OSIMetric], list[HexMeasure]]:
@@ -170,7 +164,6 @@ def convert_hex_model_measures(
         metric, unsupported_measure = convert_hex_measure(
             measure,
             model_id=model.id,
-            ossie_dialect=ossie_dialect,
             metric_names=metric_names,
             ctx=ctx,
         )

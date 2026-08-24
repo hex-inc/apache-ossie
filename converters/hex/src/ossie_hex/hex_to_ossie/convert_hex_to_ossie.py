@@ -35,16 +35,15 @@ def convert_hex_to_ossie(
     """Convert Hex project files to an Ossie file.
 
     ``files`` a mapping of file names to contents.
-    ``dialect`` is the OSI dialect the project's SQL is written in; the converted
-    expressions are tagged with it.
+    ``dialect`` is the Ossie dialect that the Hex project's SQL is written in
+        (a Hex project does not record one, so it has to be supplied by the
+        caller). The converted expressions are tagged with it.
     ``model_name`` names the Ossie semantic model.
 
     Returns ``(ossie_text, warnings)``.
     """
-    ctx = ConvertHexCtx()
+    ctx = ConvertHexCtx(ossie_dialect=dialect)
     hex_project = load_hex_project(files, project_name=model_name)
-    document, warnings = convert_hex_project(
-        hex_project, ossie_dialect=dialect, ctx=ctx
-    )
+    document, warnings = convert_hex_project(hex_project, ctx=ctx)
     data = document.model_dump(by_alias=True, exclude_none=True, mode="json")
     return dump_yaml(data), warnings

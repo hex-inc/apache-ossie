@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-from ossie import OSIDialect, OSIDialectExpression, OSIExpression, OSIField
+from ossie import OSIDialectExpression, OSIExpression, OSIField
 
 from ..hex_extension import HexDimensionStash, maybe_write_extension
 from ..hex_types import HexDimension
@@ -30,7 +30,6 @@ def convert_hex_dimension(
     dim: HexDimension,
     *,
     model_id: str,
-    ossie_dialect: OSIDialect,
     ctx: ConvertHexCtx,
 ) -> tuple[OSIField | None, HexDimension | None]:
     """Convert a Hex dimension to an Ossie field, or hand it back whole.
@@ -68,7 +67,10 @@ def convert_hex_dimension(
         name=dim.id,
         expression=OSIExpression(
             dialects=[
-                OSIDialectExpression(dialect=ossie_dialect, expression=expression_sql)
+                OSIDialectExpression(
+                    dialect=ctx.ossie_dialect,
+                    expression=expression_sql,
+                )
             ]
         ),
         label=label,

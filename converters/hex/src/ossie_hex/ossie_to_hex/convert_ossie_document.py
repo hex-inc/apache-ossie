@@ -45,9 +45,9 @@ def convert_ossie_document(
         ossie_document, model_name, ctx=ctx
     )
     ossie_dialect = _pick_ossie_dialect(ossie_document, dialect)
+    ctx.set_ossie_dialect(ossie_dialect)
     hex_resources = convert_ossie_semantic_model(
         ossie_semantic_model,
-        ossie_dialect,
         base_model=base_model,
         ctx=ctx,
     )

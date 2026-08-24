@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from typing import Any, Literal, assert_never
 
-from ossie import OSIDataset, OSIDialect, OSIMetric, OSIRelationship
+from ossie import OSIDataset, OSIMetric, OSIRelationship
 
 from ..hex_extension import HexModelStash, read_stash
 from ..hex_types import (
@@ -48,7 +48,6 @@ def convert_ossie_dataset(
     hex_id: str,
     hex_ids_by_dataset: dict[str, str],
     dim_ids_by_dataset: dict[str, dict[str, str]],
-    preferred_dialect: OSIDialect,
     relationships: list[OSIRelationship],
     metrics: list[OSIMetric],
     ctx: ConvertOssieCtx,
@@ -113,7 +112,6 @@ def convert_ossie_dataset(
         hex_id=hex_id,
         dim_id_by_field=dim_id_by_field,
         unique_names=unique_names,
-        preferred_dialect=preferred_dialect,
         resolve=resolve,
         taken_ids=taken_ids,
         ctx=ctx,
@@ -135,7 +133,6 @@ def convert_ossie_dataset(
         hex_ids_by_dataset=hex_ids_by_dataset,
         relation_ids_by_target=relation_ids_by_target,
         resolve=resolve,
-        preferred_dialect=preferred_dialect,
         taken_ids=taken_ids,
         ctx=ctx,
     )
@@ -192,7 +189,6 @@ def convert_ossie_dataset_fields(
     hex_id: str,
     dim_id_by_field: dict[str, str],
     unique_names: dict[str, None],
-    preferred_dialect: OSIDialect,
     resolve: RefResolver,
     taken_ids: set[str],
     ctx: ConvertOssieCtx,
@@ -206,7 +202,6 @@ def convert_ossie_dataset_fields(
             field,
             dim_id=dim_id_by_field[field.name],
             unique_names=unique_names.keys(),
-            preferred_dialect=preferred_dialect,
             dataset_id=hex_id,
             dataset_name=dataset.name,
             resolve=resolve,
@@ -243,7 +238,6 @@ def convert_ossie_metrics_by_dataset(
     hex_ids_by_dataset: dict[str, str],
     relation_ids_by_target: dict[str, str],
     resolve: RefResolver,
-    preferred_dialect: OSIDialect,
     taken_ids: set[str],
     ctx: ConvertOssieCtx,
 ) -> list[HexMeasure]:
@@ -257,7 +251,6 @@ def convert_ossie_metrics_by_dataset(
             foreign_names=foreign_names,
             relation_ids_by_target=relation_ids_by_target,
             resolve=resolve,
-            preferred_dialect=preferred_dialect,
             taken=taken_ids,
             ctx=ctx,
         )

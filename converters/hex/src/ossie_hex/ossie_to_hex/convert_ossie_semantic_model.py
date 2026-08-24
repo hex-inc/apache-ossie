@@ -33,7 +33,6 @@ from .restore_hex_views import restore_hex_views
 
 def convert_ossie_semantic_model(
     ossie_semantic_model: OSISemanticModel,
-    ossie_dialect: OSIDialect,
     *,
     base_model: str | None = None,
     ctx: ConvertOssieCtx,
@@ -81,7 +80,8 @@ def convert_ossie_semantic_model(
         ossie_semantic_model,
         hex_ids_by_dataset=hex_ids_by_dataset,
         base_model_id=base_model_id,
-        preferred_dialect=ossie_dialect,
+        # TODO: pass through ctx
+        preferred_dialect=ctx.ossie_dialect,
     )
 
     hex_models: list[HexModel] = []
@@ -92,7 +92,6 @@ def convert_ossie_semantic_model(
             hex_id=hex_id,
             hex_ids_by_dataset=hex_ids_by_dataset,
             dim_ids_by_dataset=dim_ids_by_dataset,
-            preferred_dialect=ossie_dialect,
             relationships=relations_by_dataset.get(hex_id, []),
             metrics=metrics_by_dataset.get(hex_id, []),
             ctx=ctx,

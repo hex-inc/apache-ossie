@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ossie import OSIDialect, OSIMetric
+from ossie import OSIMetric
 
 from ..hex_extension import HexMeasureStash, read_stash
 from ..hex_types import (
@@ -43,7 +43,6 @@ def convert_ossie_metric(
     foreign_names: set[str],
     relation_ids_by_target: dict[str, str],
     resolve: RefResolver,
-    preferred_dialect: OSIDialect,
     taken: set[str],
     ctx: ConvertOssieCtx,
 ) -> HexMeasure:
@@ -66,7 +65,7 @@ def convert_ossie_metric(
 
     measure: dict[str, Any] = {"id": measure_id}
 
-    expr = pick_expression(metric.expression, preferred=preferred_dialect)
+    expr = pick_expression(metric.expression, preferred=ctx.ossie_dialect)
     if expr is None:
         raise ConversionError(
             f"metric '{metric.name}' has no usable dialect expression"

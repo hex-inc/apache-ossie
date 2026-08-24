@@ -19,7 +19,6 @@ from __future__ import annotations
 
 from ossie import (
     OSIDataset,
-    OSIDialect,
     OSIDocument,
     OSIMetric,
     OSIRelationship,
@@ -39,13 +38,9 @@ from .convert_hex_view import convert_hex_view
 def convert_hex_project(
     hex_project: HexProject,
     *,
-    ossie_dialect: OSIDialect,
     ctx: ConvertHexCtx,
 ) -> tuple[OSIDocument, list[ConversionWarning]]:
     """Convert a Hex project to an Ossie document.
-
-    ``ossie_dialect`` is the dialect the project's SQL is written in. A Hex
-    project does not record one, so it has to be supplied by the caller.
 
     Returns ``(ossie_document, warnings)``.
     """
@@ -64,7 +59,6 @@ def convert_hex_project(
         assert isinstance(resource, HexModel)
         dataset, ds_metrics, ds_rels = convert_hex_model(
             resource,
-            ossie_dialect=ossie_dialect,
             metric_names=metric_names,
             ctx=ctx,
         )
@@ -86,7 +80,7 @@ def convert_hex_project(
     )
     document = OSIDocument(
         version=OSSIE_VERSION,
-        dialects=[ossie_dialect],
+        dialects=[ctx.ossie_dialect],
         vendors=[OSIVendor.HEX],
         semantic_model=[semantic_model],
     )

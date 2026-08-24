@@ -58,7 +58,6 @@ def convert_hex_measure(
     measure: HexMeasure,
     *,
     model_id: str,
-    ossie_dialect: OSIDialect,
     metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[OSIMetric | None, HexMeasure | None]:
@@ -112,13 +111,16 @@ def convert_hex_measure(
             f"structure preserved in custom_extensions[{HEX_VENDOR}]"
         )
 
-    datatype = convert_hex_measure_type(measure, ossie_dialect=ossie_dialect)
+    datatype = convert_hex_measure_type(measure, ctx=ctx)
 
     metric = OSIMetric(
         name=metric_name,
         expression=OSIExpression(
             dialects=[
-                OSIDialectExpression(dialect=ossie_dialect, expression=expression_sql)
+                OSIDialectExpression(
+                    dialect=ctx.ossie_dialect,
+                    expression=expression_sql,
+                )
             ]
         ),
         description=measure.description or None,
@@ -213,7 +215,7 @@ def qualified_metric_name(measure_id: str, model_id: str) -> str:
 def convert_hex_measure_type(
     measure: HexMeasure,
     *,
-    ossie_dialect: OSIDialect,
+    ctx: ConvertHexCtx,
 ) -> OSIDataType:
     """Derive the Ossie data type for a Hex measure."""
     if measure.type != HexDataType.NUMBER:
@@ -236,12 +238,12 @@ def convert_hex_measure_type(
         HexMeasureFuncName.VARIANCE,
         HexMeasureFuncName.VARIANCE_POP,
     ):
-        if ossie_dialect in (OSIDialect.BIGQUERY, OSIDialect.DATABRICKS):
+        if ctx.ossie_dialect in (OSIDialect.BIGQUERY, OSIDialect.DATABRICKS):
             return OSIDataType.FLOAT
         else:
             pass
     elif measure.func == HexMeasureFuncName.MEDIAN:
-        if ossie_dialect == OSIDialect.DATABRICKS:
+        if ctx.ossie_dialect == OSIDialect.DATABRICKS:
             return OSIDataType.FLOAT
         else:
             pass

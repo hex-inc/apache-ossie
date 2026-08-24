@@ -16,7 +16,6 @@
 # under the License.
 
 import pytest
-from ossie import OSIDialect
 
 from ossie_hex.ossie_to_hex.context import ConvertOssieCtx
 from ossie_hex.ossie_to_hex.convert_ossie_semantic_model import (
@@ -35,7 +34,6 @@ def test_rejects_an_unknown_base_model() -> None:
     with pytest.raises(ConversionError, match="--base-model 'nope'"):
         convert_ossie_semantic_model(
             document.semantic_model[0],
-            OSIDialect.ANSI_SQL,
             base_model="nope",
             ctx=ctx,
         )

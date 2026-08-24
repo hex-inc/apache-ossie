@@ -17,13 +17,16 @@
 
 from __future__ import annotations
 
+from ossie import OSIDialect
+
 from ..util.errors import ConversionWarning
 
 
 class ConvertHexCtx:
     """State shared throughout one Hex-to-Ossie conversion."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, ossie_dialect: OSIDialect) -> None:
+        self.ossie_dialect = ossie_dialect
         self.warnings: list[ConversionWarning] = []
 
     def warn(self, message: str) -> None:
