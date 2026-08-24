@@ -72,19 +72,15 @@ def convert_ossie_metric(
         )
     measure["func_sql"] = ossie_refs_to_hex(expr, resolve=resolve)
     measure["type"] = hex_type
-    unreachable = sorted(
-        name
-        for name in foreign_names
-        if references(expr, name) and name not in relation_ids_by_target
+    unreachable_warnings = _detect_unreachable_ref(
+        expr,
+        foreign_names=foreign_names,
+        relation_ids_by_target=relation_ids_by_target,
+        metric=metric,
+        dataset_id=dataset_id,
     )
-    if unreachable:
-        warnings.append(
-            ConversionWarning(
-                f"metric '{metric.name}' references "
-                f"{', '.join(unreachable)}, which '{dataset_id}' has no "
-                f"relation to; the SQL was kept verbatim and needs review"
-            )
-        )
+    if unreachable_warnings:
+        warnings.extend(unreachable_warnings)
 
     if stash is not None and stash.semi_additive is not None:
         measure["semi_additive"] = stash.semi_additive
@@ -96,3 +92,32 @@ def convert_ossie_metric(
         measure["name"] = stash.display_name
 
     return HexMeasure(**measure), warnings
+
+
+def _detect_unreachable_ref(
+    expr: str,
+    *,
+    foreign_names: set[str],
+    relation_ids_by_target: dict[str, str],
+    metric: OSIMetric,
+    dataset_id: str,
+) -> list[ConversionWarning]:
+    """Determine whether any of the given foreign dataset names are referenced in
+    the expression but are not the target of any given relation.
+
+    Returns a warning if any unreachable references are found, or None if all references are reachable.
+    """
+    unreachable = sorted(
+        name
+        for name in foreign_names
+        if references(expr, name) and name not in relation_ids_by_target
+    )
+
+    if unreachable:
+        warning = ConversionWarning(
+            f"metric '{metric.name}' references "
+            f"{', '.join(unreachable)}, which '{dataset_id}' has no "
+            f"relation to; the SQL was kept verbatim and needs review"
+        )
+        return [warning]
+    return []
