@@ -20,7 +20,8 @@ from __future__ import annotations
 from ossie import OSIDialect, OSIDocument, OSISemanticModel
 
 from ..hex_types import HexProject
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
+from .context import ConvertOssieCtx
 from .convert_ossie_semantic_model import convert_ossie_semantic_model
 
 
@@ -30,40 +31,41 @@ def convert_ossie_document(
     model_name: str | None = None,
     dialect: OSIDialect | None = None,
     base_model: str | None = None,
-    warnings: list[ConversionWarning],
-) -> tuple[HexProject, list[ConversionWarning]]:
+    ctx: ConvertOssieCtx,
+) -> HexProject:
     """Convert Ossie Document to a Hex project.
 
     ``base_model`` is the name of the base model to use for the Hex project.
     ``dialect`` selects the OSI dialect to use from multi-dialect expressions.
     ``model_name`` is the name of the model to use for the Hex project.
 
-    Returns ``(hex_project, warnings)``.
+    Returns the converted Hex project.
     """
-    ossie_semantic_model, warnings = _pick_ossie_semantic_model(
-        ossie_document, model_name
+    ossie_semantic_model = _pick_ossie_semantic_model(
+        ossie_document, model_name, ctx=ctx
     )
     ossie_dialect = _pick_ossie_dialect(ossie_document, dialect)
-    hex_resources, warnings = convert_ossie_semantic_model(
+    hex_resources = convert_ossie_semantic_model(
         ossie_semantic_model,
         ossie_dialect,
         base_model=base_model,
-        warnings=warnings,
+        ctx=ctx,
     )
     hex_project = HexProject(
         name=ossie_semantic_model.name,
         resources=hex_resources,
     )
 
-    return hex_project, warnings
+    return hex_project
 
 
 def _pick_ossie_semantic_model(
     ossie_document: OSIDocument,
     model_name: str | None,
-) -> tuple[OSISemanticModel, list[ConversionWarning]]:
+    *,
+    ctx: ConvertOssieCtx,
+) -> OSISemanticModel:
     models = ossie_document.semantic_model
-    warnings: list[ConversionWarning] = []
     if not models:
         raise ConversionError("Ossie document has no semantic_model entries")
     if model_name:
@@ -73,13 +75,11 @@ def _pick_ossie_semantic_model(
     else:
         model = models[0]
         if len(models) > 1:
-            warnings.append(
-                ConversionWarning(
-                    f"Ossie document has {len(models)} semantic models; "
-                    f"exporting '{model.name}' (pass --model to select another)"
-                )
+            ctx.warn(
+                f"Ossie document has {len(models)} semantic models; "
+                f"exporting '{model.name}' (pass --model to select another)"
             )
-    return model, warnings
+    return model
 
 
 def _pick_ossie_dialect(

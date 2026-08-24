@@ -33,8 +33,9 @@ from ..hex_types import (
     HexScalarExpressionDefaultBoolean,
     HexScalarExpressionDefaultNumber,
 )
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
 from ..util.rewrite_refs import hex_refs_to_ossie, qualify_hex_ref
+from .context import ConvertHexCtx
 from .convert_hex_datatype import hex_to_ossie_datatype
 
 _FUNC_SQL: dict[HexMeasureFuncName, str] = {
@@ -59,7 +60,8 @@ def convert_hex_measure(
     model_id: str,
     ossie_dialect: OSIDialect,
     metric_names: set[str],
-) -> tuple[OSIMetric | None, HexMeasure | None, list[ConversionWarning]]:
+    ctx: ConvertHexCtx,
+) -> tuple[OSIMetric | None, HexMeasure | None]:
     """Compile a Hex measure into an Ossie metric.
 
     Returns either the metric or, for a measure Ossie cannot express, the
@@ -69,19 +71,15 @@ def convert_hex_measure(
     it into. Returning early also leaves its ID out of ``metric_names``, since
     it claims no metric name for a later measure to collide with.
     """
-    warnings: list[ConversionWarning] = []
-
     expression_sql: str
     if measure.func_calc:
-        warnings.append(
-            ConversionWarning(
-                f"measure '{model_id}.{measure.id}' is a formula over other "
-                f"measures, which an Ossie metric cannot express; no metric "
-                f"was exported and the measure is preserved whole in "
-                f"custom_extensions[{HEX_VENDOR}]"
-            )
+        ctx.warn(
+            f"measure '{model_id}.{measure.id}' is a formula over other "
+            f"measures, which an Ossie metric cannot express; no metric "
+            f"was exported and the measure is preserved whole in "
+            f"custom_extensions[{HEX_VENDOR}]"
         )
-        return None, measure, warnings
+        return None, measure
     elif measure.func_sql:
         expression_sql = hex_refs_to_ossie(measure.func_sql, model=model_id)
     elif measure.func:
@@ -94,11 +92,9 @@ def convert_hex_measure(
     metric_name = measure.id
     if metric_name in metric_names:
         metric_name = qualified_metric_name(measure.id, model_id)
-        warnings.append(
-            ConversionWarning(
-                f"measure '{measure.id}' on '{model_id}' collided with another "
-                f"metric name; exported as '{metric_name}'"
-            )
+        ctx.warn(
+            f"measure '{measure.id}' on '{model_id}' collided with another "
+            f"metric name; exported as '{metric_name}'"
         )
     metric_names.add(metric_name)
 
@@ -111,11 +107,9 @@ def convert_hex_measure(
         semi_additive=measure.semi_additive,
     )
     if measure.semi_additive is not None:
-        warnings.append(
-            ConversionWarning(
-                f"measure '{model_id}.{measure.id}' is semi-additive; "
-                f"structure preserved in custom_extensions[{HEX_VENDOR}]"
-            )
+        ctx.warn(
+            f"measure '{model_id}.{measure.id}' is semi-additive; "
+            f"structure preserved in custom_extensions[{HEX_VENDOR}]"
         )
 
     datatype = convert_hex_measure_type(measure, ossie_dialect=ossie_dialect)
@@ -131,7 +125,7 @@ def convert_hex_measure(
         datatype=datatype,
         custom_extensions=maybe_write_extension(stash),
     )
-    return metric, None, warnings
+    return metric, None
 
 
 def compile_func_measure(measure: HexMeasure, *, model_id: str) -> str:

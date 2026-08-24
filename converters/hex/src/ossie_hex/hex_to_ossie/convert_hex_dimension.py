@@ -21,8 +21,8 @@ from ossie import OSIDialect, OSIDialectExpression, OSIExpression, OSIField
 
 from ..hex_extension import HexDimensionStash, maybe_write_extension
 from ..hex_types import HexDimension
-from ..util.errors import ConversionWarning
 from ..util.rewrite_refs import hex_refs_to_ossie
+from .context import ConvertHexCtx
 from .convert_hex_datatype import hex_to_ossie_datatype
 
 
@@ -31,23 +31,20 @@ def convert_hex_dimension(
     *,
     model_id: str,
     ossie_dialect: OSIDialect,
-) -> tuple[OSIField | None, HexDimension | None, list[ConversionWarning]]:
+    ctx: ConvertHexCtx,
+) -> tuple[OSIField | None, HexDimension | None]:
     """Convert a Hex dimension to an Ossie field, or hand it back whole.
 
 
     Returns either an Ossie Field or, for a dimension Ossie cannot express, the
     dimension itself to preserve whole.
     """
-    warnings: list[ConversionWarning] = []
-
     if dim.expr_calc:
-        warnings.append(
-            ConversionWarning(
-                f"dimension '{model_id}.{dim.id}' uses Hex calculation formula "
-                f"syntax, which conversion to Ossie is not supported."
-            )
+        ctx.warn(
+            f"dimension '{model_id}.{dim.id}' uses Hex calculation formula "
+            f"syntax, which conversion to Ossie is not supported."
         )
-        return None, dim, warnings
+        return None, dim
 
     if dim.expr_sql is None:
         expression_sql = dim.id
@@ -79,4 +76,4 @@ def convert_hex_dimension(
         datatype=datatype,
         custom_extensions=maybe_write_extension(stash),
     )
-    return field, None, warnings
+    return field, None

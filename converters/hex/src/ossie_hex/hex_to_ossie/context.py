@@ -17,29 +17,14 @@
 
 from __future__ import annotations
 
-from ossie import OSIDocument
-from pydantic import ValidationError
-
-from ..util.errors import ConversionError
-from ..util.yaml import load_yaml
+from ..util.errors import ConversionWarning
 
 
-def load_ossie_document(
-    ossie_text: str,
-) -> OSIDocument:
-    """Parse file contents as an Ossie document.
+class ConvertHexCtx:
+    """State shared throughout one Hex-to-Ossie conversion."""
 
-    ``ossie_text`` the contents of a file, expected to be in Ossie YAML format.
+    def __init__(self) -> None:
+        self.warnings: list[ConversionWarning] = []
 
-    Returns ``ossie_document``.
-    """
-    raw = load_yaml(ossie_text, what="Ossie model")
-    if not isinstance(raw, dict):
-        raise ConversionError("Ossie document must be a mapping")
-
-    try:
-        document = OSIDocument.model_validate(raw)
-    except ValidationError as e:
-        raise ConversionError(f"Invalid Ossie document: {e}") from e
-
-    return document
+    def warn(self, message: str) -> None:
+        self.warnings.append(ConversionWarning(message))

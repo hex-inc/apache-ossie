@@ -20,6 +20,7 @@ from __future__ import annotations
 from ossie import OSIDialect
 
 from ..util.errors import ConversionWarning
+from .context import ConvertOssieCtx
 from .convert_ossie_document import convert_ossie_document
 from .dump_hex_resource import hex_resource_to_yaml
 from .load_ossie_document import load_ossie_document
@@ -40,18 +41,18 @@ def convert_ossie_to_hex(
 
     Returns ``(files, warnings)``.
     """
-    warnings: list[ConversionWarning] = []
+    ctx = ConvertOssieCtx()
     ossie_document = load_ossie_document(ossie_text)
-    hex_project, warnings = convert_ossie_document(
+    hex_project = convert_ossie_document(
         ossie_document,
         model_name=model_name,
         dialect=dialect,
         base_model=base_model,
-        warnings=warnings,
+        ctx=ctx,
     )
 
     files: dict[str, str] = {}
     for resource in hex_project.resources:
         files[f"{resource.id}.yml"] = hex_resource_to_yaml(resource)
 
-    return files, warnings
+    return files, ctx.warnings

@@ -31,6 +31,7 @@ from ..hex_extension import HexProjectStash, HexViewStash, write_stash
 from ..hex_types import HexModel, HexProject, HexView
 from ..ossie_types import OSSIE_VERSION
 from ..util.errors import ConversionError, ConversionWarning
+from .context import ConvertHexCtx
 from .convert_hex_model import convert_hex_model
 from .convert_hex_view import convert_hex_view
 
@@ -39,6 +40,7 @@ def convert_hex_project(
     hex_project: HexProject,
     *,
     ossie_dialect: OSIDialect,
+    ctx: ConvertHexCtx,
 ) -> tuple[OSIDocument, list[ConversionWarning]]:
     """Convert a Hex project to an Ossie document.
 
@@ -47,9 +49,6 @@ def convert_hex_project(
 
     Returns ``(ossie_document, warnings)``.
     """
-
-    warnings: list[ConversionWarning] = []
-
     datasets: list[OSIDataset] = []
     relationships: list[OSIRelationship] = []
     metrics: list[OSIMetric] = []
@@ -58,21 +57,20 @@ def convert_hex_project(
 
     for resource in hex_project.resources:
         if isinstance(resource, HexView):
-            view_stash, view_warnings = convert_hex_view(resource)
+            view_stash = convert_hex_view(resource, ctx=ctx)
             views_stash.append(view_stash)
-            warnings.extend(view_warnings)
             continue
 
         assert isinstance(resource, HexModel)
-        dataset, ds_metrics, ds_rels, ds_warnings = convert_hex_model(
+        dataset, ds_metrics, ds_rels = convert_hex_model(
             resource,
             ossie_dialect=ossie_dialect,
             metric_names=metric_names,
+            ctx=ctx,
         )
         datasets.append(dataset)
         metrics.extend(ds_metrics)
         relationships.extend(ds_rels)
-        warnings.extend(ds_warnings)
 
     if not datasets:
         raise ConversionError("Hex project contains no convertible models")
@@ -92,4 +90,4 @@ def convert_hex_project(
         vendors=[OSIVendor.HEX],
         semantic_model=[semantic_model],
     )
-    return document, warnings
+    return document, ctx.warnings

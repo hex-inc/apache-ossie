@@ -21,8 +21,9 @@ from ossie import OSIDialect, OSIMetric, OSIRelationship, OSISemanticModel
 
 from ..hex_extension import HexMeasureStash, HexProjectStash, read_stash
 from ..hex_types import HexModel, HexResource
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
 from ..util.pick_expression import pick_expression
+from .context import ConvertOssieCtx
 from .convert_ossie_dataset import convert_ossie_dataset
 from .hex_ids import dataset_hex_ids, dimension_hex_ids
 from .references import references
@@ -35,11 +36,11 @@ def convert_ossie_semantic_model(
     ossie_dialect: OSIDialect,
     *,
     base_model: str | None = None,
-    warnings: list[ConversionWarning],
-) -> tuple[list[HexResource], list[ConversionWarning]]:
+    ctx: ConvertOssieCtx,
+) -> list[HexResource]:
     """Convert Ossie semantic model to a Hex project
 
-    Returns ``(hex_resources, warnings)``.
+    Returns the converted Hex resources.
     """
 
     # Ossie names are free-form while Hex refs address Hex IDs, so resolve every
@@ -94,7 +95,7 @@ def convert_ossie_semantic_model(
             preferred_dialect=ossie_dialect,
             relationships=relations_by_dataset.get(hex_id, []),
             metrics=metrics_by_dataset.get(hex_id, []),
-            warnings=warnings,
+            ctx=ctx,
         )
         hex_models.append(hex_model)
 
@@ -103,7 +104,7 @@ def convert_ossie_semantic_model(
     )
     hex_views = restore_hex_views(hex_project_stash, taken_ids=taken_hex_resource_ids)
     hex_resources = hex_models + hex_views
-    return hex_resources, warnings
+    return hex_resources
 
 
 def _assign_ossie_metrics(

@@ -21,7 +21,7 @@ from ossie import OSIDataset, OSIDialect, OSIField, OSIMetric, OSIRelationship
 
 from ..hex_extension import HexModelStash, maybe_write_extension
 from ..hex_types import HexDimension, HexMeasure, HexModel, HexRelation
-from ..util.errors import ConversionWarning
+from .context import ConvertHexCtx
 from .convert_hex_dimension import convert_hex_dimension
 from .convert_hex_measure import convert_hex_measure
 from .convert_hex_relation import convert_hex_relation
@@ -32,38 +32,34 @@ def convert_hex_model(
     *,
     ossie_dialect: OSIDialect,
     metric_names: set[str],
-) -> tuple[OSIDataset, list[OSIMetric], list[OSIRelationship], list[ConversionWarning]]:
+    ctx: ConvertHexCtx,
+) -> tuple[OSIDataset, list[OSIMetric], list[OSIRelationship]]:
     """Convert a Hex model to an Ossie dataset and the document-level entries it adds."""
-    warnings: list[ConversionWarning] = []
-
     # Relations are converted first because whether a dimension's reference to
     # another model survives the trip back depends on which of them become
     # relationships.
     (
         relationships,
         unsupported_relations,
-        relation_warnings,
-    ) = convert_hex_model_relations(model)
-    warnings.extend(relation_warnings)
+    ) = convert_hex_model_relations(model, ctx=ctx)
 
     (
         fields,
         unsupported_dimensions,
         primary_key,
         unique_keys,
-        dimension_warnings,
     ) = convert_hex_model_dimensions(
         model,
         ossie_dialect=ossie_dialect,
+        ctx=ctx,
     )
-    warnings.extend(dimension_warnings)
 
-    metrics, unsupported_measures, measure_warnings = convert_hex_model_measures(
+    metrics, unsupported_measures = convert_hex_model_measures(
         model,
         ossie_dialect=ossie_dialect,
         metric_names=metric_names,
+        ctx=ctx,
     )
-    warnings.extend(measure_warnings)
 
     # even though our parsing does well, it's better to be safe and preserve
     source_kind = "table" if model.base_sql_table else "query"
@@ -87,42 +83,40 @@ def convert_hex_model(
         custom_extensions=maybe_write_extension(stash),
     )
 
-    return dataset, metrics, relationships, warnings
+    return dataset, metrics, relationships
 
 
 def convert_hex_model_relations(
     model: HexModel,
-) -> tuple[
-    list[OSIRelationship],
-    list[HexRelation],
-    list[ConversionWarning],
-]:
+    *,
+    ctx: ConvertHexCtx,
+) -> tuple[list[OSIRelationship], list[HexRelation]]:
     """Convert a model's relations, preserving ones Ossie cannot express."""
     relationships: list[OSIRelationship] = []
     unsupported_relations: list[HexRelation] = []
-    warnings: list[ConversionWarning] = []
     for relation in model.relations:
-        relationship, unsupported_relation, relation_warnings = convert_hex_relation(
-            relation, base_model_id=model.id
+        relationship, unsupported_relation = convert_hex_relation(
+            relation,
+            base_model_id=model.id,
+            ctx=ctx,
         )
-        warnings.extend(relation_warnings)
         if relationship is not None:
             relationships.append(relationship)
         elif unsupported_relation is not None:
             unsupported_relations.append(unsupported_relation)
-    return relationships, unsupported_relations, warnings
+    return relationships, unsupported_relations
 
 
 def convert_hex_model_dimensions(
     model: HexModel,
     *,
     ossie_dialect: OSIDialect,
+    ctx: ConvertHexCtx,
 ) -> tuple[
     list[OSIField],
     list[HexDimension],
     list[str] | None,
     list[list[str]] | None,
-    list[ConversionWarning],
 ]:
     """Convert a model's dimensions, collecting the ones marked unique.
 
@@ -131,20 +125,18 @@ def convert_hex_model_dimensions(
     - ``unsupported_dimensions``: dimensions Ossie cannot express.
     - ``primary_key``: Ossie primary key, if any.
     - ``unique_keys``: Ossie unique keys, if any.
-    - ``warnings``: Conversion warnings.
     """
     fields: list[OSIField] = []
     unsupported_dimensions: list[HexDimension] = []
     unique_field_names: list[str] = []
 
-    warnings: list[ConversionWarning] = []
     for dim in model.dimensions:
-        field, unsupported_dimension, dimension_warnings = convert_hex_dimension(
+        field, unsupported_dimension = convert_hex_dimension(
             dim,
             model_id=model.id,
             ossie_dialect=ossie_dialect,
+            ctx=ctx,
         )
-        warnings.extend(dimension_warnings)
         if field is not None:
             fields.append(field)
             if dim.unique:
@@ -161,7 +153,7 @@ def convert_hex_model_dimensions(
         # Hex marks each dimension unique on its own, and does not reflect composite keys
         unique_keys = [[name] for name in unique_field_names[1:]] or None
 
-    return fields, unsupported_dimensions, primary_key, unique_keys, warnings
+    return fields, unsupported_dimensions, primary_key, unique_keys
 
 
 def convert_hex_model_measures(
@@ -169,21 +161,21 @@ def convert_hex_model_measures(
     *,
     ossie_dialect: OSIDialect,
     metric_names: set[str],
-) -> tuple[list[OSIMetric], list[HexMeasure], list[ConversionWarning]]:
+    ctx: ConvertHexCtx,
+) -> tuple[list[OSIMetric], list[HexMeasure]]:
     """Convert a model's measures, setting aside the ones Ossie cannot express."""
     metrics: list[OSIMetric] = []
     unsupported_measures: list[HexMeasure] = []
-    warnings: list[ConversionWarning] = []
     for measure in model.measures:
-        metric, unsupported_measure, measure_warnings = convert_hex_measure(
+        metric, unsupported_measure = convert_hex_measure(
             measure,
             model_id=model.id,
             ossie_dialect=ossie_dialect,
             metric_names=metric_names,
+            ctx=ctx,
         )
-        warnings.extend(measure_warnings)
         if metric is not None:
             metrics.append(metric)
         elif unsupported_measure is not None:
             unsupported_measures.append(unsupported_measure)
-    return metrics, unsupported_measures, warnings
+    return metrics, unsupported_measures

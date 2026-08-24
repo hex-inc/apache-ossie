@@ -28,9 +28,10 @@ from ..hex_types import (
     id_to_name,
     normalize_to_hex_id,
 )
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
 from ..util.pick_expression import pick_expression
 from ..util.rewrite_refs import RefResolver, ossie_refs_to_hex
+from .context import ConvertOssieCtx
 from .convert_ossie_datatype import ossie_to_hex_datatype
 from .references import references
 
@@ -44,9 +45,9 @@ def convert_ossie_metric(
     resolve: RefResolver,
     preferred_dialect: OSIDialect,
     taken: set[str],
-) -> tuple[HexMeasure, list[ConversionWarning]]:
+    ctx: ConvertOssieCtx,
+) -> HexMeasure:
     """Convert an Ossie metric to a Hex measure on ``dataset_id``."""
-    warnings: list[ConversionWarning] = []
     stash = read_stash(metric.custom_extensions, HexMeasureStash)
     preferred_id = (
         stash.measure_id
@@ -61,7 +62,7 @@ def convert_ossie_metric(
         stash=stash.type if stash is not None else None,
     )
     if type_warning:
-        warnings.append(ConversionWarning(f"Metric '{metric.name}': {type_warning}"))
+        ctx.warn(f"Metric '{metric.name}': {type_warning}")
 
     measure: dict[str, Any] = {"id": measure_id}
 
@@ -72,15 +73,15 @@ def convert_ossie_metric(
         )
     measure["func_sql"] = ossie_refs_to_hex(expr, resolve=resolve)
     measure["type"] = hex_type
-    unreachable_warnings = _detect_unreachable_ref(
+
+    _detect_unreachable_ref(
         expr,
+        ctx=ctx,
         foreign_names=foreign_names,
         relation_ids_by_target=relation_ids_by_target,
         metric=metric,
         dataset_id=dataset_id,
     )
-    if unreachable_warnings:
-        warnings.extend(unreachable_warnings)
 
     if stash is not None and stash.semi_additive is not None:
         measure["semi_additive"] = stash.semi_additive
@@ -91,7 +92,7 @@ def convert_ossie_metric(
     if stash is not None and stash.display_name != id_to_name(measure_id):
         measure["name"] = stash.display_name
 
-    return HexMeasure(**measure), warnings
+    return HexMeasure(**measure)
 
 
 def _detect_unreachable_ref(
@@ -101,7 +102,8 @@ def _detect_unreachable_ref(
     relation_ids_by_target: dict[str, str],
     metric: OSIMetric,
     dataset_id: str,
-) -> list[ConversionWarning]:
+    ctx: ConvertOssieCtx,
+) -> None:
     """Determine whether any of the given foreign dataset names are referenced in
     the expression but are not the target of any given relation.
 
@@ -114,10 +116,8 @@ def _detect_unreachable_ref(
     )
 
     if unreachable:
-        warning = ConversionWarning(
+        ctx.warn(
             f"metric '{metric.name}' references "
             f"{', '.join(unreachable)}, which '{dataset_id}' has no "
             f"relation to; the SQL was kept verbatim and needs review"
         )
-        return [warning]
-    return []

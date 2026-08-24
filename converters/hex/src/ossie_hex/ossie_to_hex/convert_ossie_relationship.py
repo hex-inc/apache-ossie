@@ -24,7 +24,7 @@ from ossie import OSIRelationship
 from ..hex_extension import HexRelationStash, read_stash
 from ..hex_types import HexRelation, normalize_to_hex_id
 from ..util.equi_join import synthesize_join_sql
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
 from .relationship_sides import relationship_sides
 
 
@@ -35,9 +35,8 @@ def convert_ossie_relationship(
     hex_ids_by_dataset: dict[str, str],
     dim_ids_by_dataset: dict[str, dict[str, str]],
     taken: set[str],
-) -> tuple[HexRelation, list[ConversionWarning]]:
+) -> HexRelation:
     """Convert an Ossie relationship to a Hex relation on ``base_dataset``."""
-    warnings: list[ConversionWarning] = []
     stash = read_stash(rel.custom_extensions, HexRelationStash)
     rel_id = normalize_to_hex_id(rel.name, "relation", taken)
 
@@ -69,4 +68,4 @@ def convert_ossie_relationship(
         hex_rel["target"] = target
     if stash is not None and stash.visibility is not None:
         hex_rel["visibility"] = stash.visibility
-    return HexRelation(**hex_rel), warnings
+    return HexRelation(**hex_rel)

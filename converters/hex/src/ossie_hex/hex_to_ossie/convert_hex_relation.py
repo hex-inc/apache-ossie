@@ -22,20 +22,20 @@ from ossie import OSIRelationship
 from ..hex_extension import HEX_VENDOR, HexRelationStash, maybe_write_extension
 from ..hex_types import HexRelation, HexRelationType
 from ..util.equi_join import parse_equi_join
-from ..util.errors import ConversionWarning
+from .context import ConvertHexCtx
 
 
 def convert_hex_relation(
     relation: HexRelation,
     *,
     base_model_id: str,
-) -> tuple[OSIRelationship | None, HexRelation | None, list[ConversionWarning]]:
+    ctx: ConvertHexCtx,
+) -> tuple[OSIRelationship | None, HexRelation | None]:
     """Export a Hex relation as an Ossie relationship, or hand it back whole.
 
     A join with no column pairs to decompose into leaves no relationship to
     carry it, so the relation itself is returned for the model to preserve.
     """
-    warnings: list[ConversionWarning] = []
     parsed = parse_equi_join(
         relation.join_sql,
         relation_id=relation.id,
@@ -43,13 +43,11 @@ def convert_hex_relation(
     )
 
     if parsed is None:
-        warnings.append(
-            ConversionWarning(
-                f"relation '{base_model_id}.{relation.id}' join_sql could not be "
-                f"decomposed into column pairs; preserved in custom_extensions[{HEX_VENDOR}]"
-            )
+        ctx.warn(
+            f"relation '{base_model_id}.{relation.id}' join_sql could not be "
+            f"decomposed into column pairs; preserved in custom_extensions[{HEX_VENDOR}]"
         )
-        return None, relation, warnings
+        return None, relation
 
     local_cols, remote_cols = parsed
     from_ds, to_ds = base_model_id, relation.target
@@ -76,4 +74,4 @@ def convert_hex_relation(
         custom_extensions=maybe_write_extension(stash),
         **{"from": from_ds},
     )
-    return rel, None, warnings
+    return rel, None

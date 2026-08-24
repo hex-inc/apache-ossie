@@ -28,9 +28,9 @@ from ..hex_types import (
     HexDimension,
     id_to_name,
 )
-from ..util.errors import ConversionWarning
 from ..util.pick_expression import pick_expression
 from ..util.rewrite_refs import RefResolver, rebuild_hex_expr_sql
+from .context import ConvertOssieCtx
 from .convert_ossie_datatype import ossie_to_hex_datatype
 from .validate_time_role import validate_time_role
 
@@ -44,9 +44,9 @@ def convert_ossie_field(
     dataset_id: str,
     dataset_name: str,
     resolve: RefResolver,
-) -> tuple[HexDimension, list[ConversionWarning]]:
+    ctx: ConvertOssieCtx,
+) -> HexDimension:
     """Convert an Ossie field to a Hex dimension."""
-    warnings: list[ConversionWarning] = []
     stash = read_stash(field.custom_extensions, HexDimensionStash)
 
     hex_type, type_warning = ossie_to_hex_datatype(
@@ -55,10 +55,8 @@ def convert_ossie_field(
         stash=stash.type if stash is not None else None,
     )
     if type_warning:
-        warnings.append(
-            ConversionWarning(f"Field '{dataset_id}.{field.name}': {type_warning}")
-        )
-    warnings.extend(validate_time_role(field, hex_type, dataset_id=dataset_id))
+        ctx.warn(f"Field '{dataset_id}.{field.name}': {type_warning}")
+    validate_time_role(field, hex_type, dataset_id=dataset_id, ctx=ctx)
 
     dim: dict[str, Any] = {
         "id": dim_id,
@@ -67,11 +65,9 @@ def convert_ossie_field(
 
     expr = pick_expression(field.expression, preferred=preferred_dialect)
     if expr is None:
-        warnings.append(
-            ConversionWarning(
-                f"Field '{dataset_id}.{field.name}' has no usable dialect "
-                f"expression; defaulting expr_sql to id"
-            )
+        ctx.warn(
+            f"Field '{dataset_id}.{field.name}' has no usable dialect "
+            f"expression; defaulting expr_sql to id"
         )
     else:
         rebuilt = rebuild_hex_expr_sql(
@@ -93,4 +89,4 @@ def convert_ossie_field(
     if field.label and field.label != id_to_name(dim_id):
         dim["name"] = field.label
 
-    return HexDimension(**dim), warnings
+    return HexDimension(**dim)

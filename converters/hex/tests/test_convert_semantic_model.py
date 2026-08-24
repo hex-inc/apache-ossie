@@ -18,6 +18,7 @@
 import pytest
 from ossie import OSIDialect
 
+from ossie_hex.ossie_to_hex.context import ConvertOssieCtx
 from ossie_hex.ossie_to_hex.convert_ossie_semantic_model import (
     convert_ossie_semantic_model,
 )
@@ -28,6 +29,7 @@ from tests.utils import one_metric_ossie
 
 def test_rejects_an_unknown_base_model() -> None:
     """A name that matches no dataset would silently swallow the metrics it takes."""
+    ctx = ConvertOssieCtx()
     document = load_ossie_document(one_metric_ossie("COUNT(*)"))
 
     with pytest.raises(ConversionError, match="--base-model 'nope'"):
@@ -35,5 +37,5 @@ def test_rejects_an_unknown_base_model() -> None:
             document.semantic_model[0],
             OSIDialect.ANSI_SQL,
             base_model="nope",
-            warnings=[],
+            ctx=ctx,
         )

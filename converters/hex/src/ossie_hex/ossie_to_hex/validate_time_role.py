@@ -20,7 +20,7 @@ from __future__ import annotations
 from ossie import OSIField
 
 from ..hex_types import HexDataType, is_temporal_hex_type
-from ..util.errors import ConversionWarning
+from .context import ConvertOssieCtx
 
 
 def validate_time_role(
@@ -28,7 +28,8 @@ def validate_time_role(
     hex_type: HexDataType,
     *,
     dataset_id: str,
-) -> list[ConversionWarning]:
+    ctx: ConvertOssieCtx,
+) -> None:
     """Report a temporal role that the Hex type cannot carry.
 
     Ossie tracks the time axis separately from the datatype, so a year stored as
@@ -40,21 +41,18 @@ def validate_time_role(
     has no role to lose and must not be read as having opted out.
     """
     if field.dimension is None:
-        return []
+        return
     hex_is_time = is_temporal_hex_type(hex_type)
     if field.is_time_dimension() == hex_is_time:
-        return []
+        return
     where = f"field '{dataset_id}.{field.name}'"
     if hex_is_time:
-        return [
-            ConversionWarning(
-                f"{where} is marked is_time: false, but Hex reads its "
-                f"'{hex_type.value}' type as temporal; the opt-out is dropped"
-            )
-        ]
-    return [
-        ConversionWarning(
-            f"{where} is a time dimension, but Hex infers the time axis from the "
-            f"type and '{hex_type.value}' is not temporal; the role is dropped"
+        ctx.warn(
+            f"{where} is marked is_time: false, but Hex reads its "
+            f"'{hex_type.value}' type as temporal; the opt-out is dropped"
         )
-    ]
+        return
+    ctx.warn(
+        f"{where} is a time dimension, but Hex infers the time axis from the "
+        f"type and '{hex_type.value}' is not temporal; the role is dropped"
+    )

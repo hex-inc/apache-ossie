@@ -28,6 +28,7 @@ from ossie import (
 )
 
 from ossie_hex.hex_types import HexModel
+from ossie_hex.ossie_to_hex.context import ConvertOssieCtx
 from ossie_hex.ossie_to_hex.convert_ossie_document import convert_ossie_document
 from ossie_hex.ossie_types import OSSIE_VERSION
 from ossie_hex.util.errors import ConversionError
@@ -49,18 +50,21 @@ _TWO_MODELS = OSIDocument(
 
 
 def test_semantic_models_not_found() -> None:
+    ctx = ConvertOssieCtx()
     with pytest.raises(ConversionError, match="no semantic_model entries"):
         convert_ossie_document(
-            OSIDocument(version=OSSIE_VERSION, semantic_model=[]), warnings=[]
+            OSIDocument(version=OSSIE_VERSION, semantic_model=[]),
+            ctx=ctx,
         )
 
 
 def test_semantic_model_default() -> None:
-    project, warnings = convert_ossie_document(_TWO_MODELS, warnings=[])
+    ctx = ConvertOssieCtx()
+    project = convert_ossie_document(_TWO_MODELS, ctx=ctx)
 
     assert project.name == "first"
     assert [resource.id for resource in project.resources] == ["orders"]
-    assert [str(warning) for warning in warnings] == [
+    assert [str(warning) for warning in ctx.warnings] == [
         (
             "Ossie document has 2 semantic models; exporting 'first' "
             "(pass --model to select another)"
@@ -70,19 +74,23 @@ def test_semantic_model_default() -> None:
 
 def test_requested_semantic_model() -> None:
     # model name should be used to select the semantic model; no warnings
-    project, warnings = convert_ossie_document(
-        _TWO_MODELS, model_name="second", warnings=[]
-    )
+    ctx = ConvertOssieCtx()
+    project = convert_ossie_document(_TWO_MODELS, model_name="second", ctx=ctx)
 
     assert project.name == "second"
     assert [resource.id for resource in project.resources] == ["events"]
-    assert warnings == []
+    assert ctx.warnings == []
 
 
 def test_semantic_model_not_found() -> None:
     # model name not found in the document should be rejected
+    ctx = ConvertOssieCtx()
     with pytest.raises(ConversionError, match="semantic model 'third' not found"):
-        convert_ossie_document(_TWO_MODELS, model_name="third", warnings=[])
+        convert_ossie_document(
+            _TWO_MODELS,
+            model_name="third",
+            ctx=ctx,
+        )
 
 
 # endregion Ossie Semantic Model selection
@@ -135,7 +143,12 @@ def _one_multi_dialect_field(*declared: OSIDialect) -> OSIDocument:
 def _exported_expression(
     document: OSIDocument, dialect: OSIDialect | None = None
 ) -> str | None:
-    project, _ = convert_ossie_document(document, dialect=dialect, warnings=[])
+    ctx = ConvertOssieCtx()
+    project = convert_ossie_document(
+        document,
+        dialect=dialect,
+        ctx=ctx,
+    )
     model = project.resources[0]
     assert isinstance(model, HexModel)
     return model.dimensions[0].expr_sql

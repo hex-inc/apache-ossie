@@ -19,19 +19,17 @@ from __future__ import annotations
 
 from ..hex_extension import HEX_VENDOR, HexViewStash
 from ..hex_types import HexView
-from ..util.errors import ConversionWarning
+from .context import ConvertHexCtx
 
 
-def convert_hex_view(view: HexView) -> tuple[HexViewStash, list[ConversionWarning]]:
+def convert_hex_view(view: HexView, *, ctx: ConvertHexCtx) -> HexViewStash:
     """Record a Hex view for the semantic model to carry through Ossie.
 
     Ossie models the data, not the entry points onto it, so a view is kept whole
     rather than converted and comes back verbatim on import.
     """
-    warnings = [
-        ConversionWarning(
-            f"view '{view.id}' has no Ossie core equivalent; "
-            f"preserved in custom_extensions[{HEX_VENDOR}]"
-        )
-    ]
-    return HexViewStash(resource=view), warnings
+    ctx.warn(
+        f"view '{view.id}' has no Ossie core equivalent; "
+        f"preserved in custom_extensions[{HEX_VENDOR}]"
+    )
+    return HexViewStash(resource=view)

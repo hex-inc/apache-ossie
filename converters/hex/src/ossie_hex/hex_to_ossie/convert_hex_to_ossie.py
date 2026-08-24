@@ -21,6 +21,7 @@ from ossie import OSIDialect
 
 from ..util.errors import ConversionWarning
 from ..util.yaml import dump_yaml
+from .context import ConvertHexCtx
 from .convert_hex_project import convert_hex_project
 from .load_hex_project import load_hex_project
 
@@ -40,7 +41,10 @@ def convert_hex_to_ossie(
 
     Returns ``(ossie_text, warnings)``.
     """
+    ctx = ConvertHexCtx()
     hex_project = load_hex_project(files, project_name=model_name)
-    document, warnings = convert_hex_project(hex_project, ossie_dialect=dialect)
+    document, warnings = convert_hex_project(
+        hex_project, ossie_dialect=dialect, ctx=ctx
+    )
     data = document.model_dump(by_alias=True, exclude_none=True, mode="json")
     return dump_yaml(data), warnings
