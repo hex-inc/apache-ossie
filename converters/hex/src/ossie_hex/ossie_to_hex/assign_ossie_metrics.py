@@ -21,7 +21,8 @@ from ossie import OSIDialect, OSIMetric, OSISemanticModel
 
 from ..hex_extension import HexMeasureStash, read_stash
 from ..util.errors import ConversionError
-from .references import datasets_referenced
+from ..util.pick_expression import pick_expression
+from .references import references
 
 
 def assign_ossie_metrics(
@@ -52,7 +53,7 @@ def assign_ossie_metrics(
         if ds_id and ds_id in hex_model_ids:
             metrics_by_dataset.setdefault(ds_id, []).append(metric)
             continue
-        refs = datasets_referenced(metric, preferred_dialect, ossie_dataset_names)
+        refs = _datasets_referenced(metric, preferred_dialect, ossie_dataset_names)
         if len(refs) == 1:
             metrics_by_dataset.setdefault(hex_ids_by_dataset[refs[0]], []).append(
                 metric
@@ -76,3 +77,15 @@ def assign_ossie_metrics(
             )
 
     return metrics_by_dataset
+
+
+def _datasets_referenced(
+    metric: OSIMetric,
+    preferred_dialect: OSIDialect,
+    dataset_names: set[str],
+) -> list[str]:
+    """Names from ``dataset_names`` that the metric's expression qualifies."""
+    expr = pick_expression(metric.expression, preferred=preferred_dialect)
+    if not expr:
+        return []
+    return [name for name in dataset_names if references(expr, name)]

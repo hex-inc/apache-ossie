@@ -19,10 +19,6 @@ from __future__ import annotations
 
 import re
 
-from ossie import OSIDialect, OSIMetric
-
-from ..util.pick_expression import pick_expression
-
 
 def references(expr: str, dataset_name: str) -> bool:
     """Whether ``expr`` qualifies anything with ``dataset_name``."""
@@ -31,15 +27,3 @@ def references(expr: str, dataset_name: str) -> bool:
     # form and would also see one inside a string literal. The word boundary
     # stops ``orders`` from matching ``back_orders.total``.
     return bool(re.search(rf"\b{re.escape(dataset_name)}\.", expr))
-
-
-def datasets_referenced(
-    metric: OSIMetric,
-    preferred_dialect: OSIDialect,
-    dataset_names: set[str],
-) -> list[str]:
-    """Names from ``dataset_names`` that the metric's expression qualifies."""
-    expr = pick_expression(metric.expression, preferred=preferred_dialect)
-    if not expr:
-        return []
-    return [name for name in dataset_names if references(expr, name)]
