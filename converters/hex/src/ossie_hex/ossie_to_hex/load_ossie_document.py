@@ -20,20 +20,19 @@ from __future__ import annotations
 from ossie import OSIDocument
 from pydantic import ValidationError
 
-from ..util.errors import ConversionError, ConversionWarning
+from ..util.errors import ConversionError
 from ..util.yaml import load_yaml
 
 
 def load_ossie_document(
     ossie_text: str,
-) -> tuple[OSIDocument, list[ConversionWarning]]:
+) -> OSIDocument:
     """Parse file contents as an Ossie document.
 
     ``ossie_text`` the contents of a file, expected to be in Ossie YAML format.
 
     Returns ``(ossie_document, warnings)``.
     """
-    warnings: list[ConversionWarning] = []
     raw = load_yaml(ossie_text, what="Ossie model")
     if not isinstance(raw, dict):
         raise ConversionError("Ossie document must be a mapping")
@@ -43,4 +42,4 @@ def load_ossie_document(
     except ValidationError as e:
         raise ConversionError(f"Invalid Ossie document: {e}") from e
 
-    return document, warnings
+    return document

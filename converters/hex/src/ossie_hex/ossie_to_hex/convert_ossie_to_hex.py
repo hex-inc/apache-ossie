@@ -41,7 +41,7 @@ def convert_ossie_to_hex(
     Returns ``(files, warnings)``.
     """
     warnings: list[ConversionWarning] = []
-    ossie_document, warnings = load_ossie_document(ossie_text)
+    ossie_document = load_ossie_document(ossie_text)
     hex_project, warnings = convert_ossie_document(
         ossie_document,
         model_name=model_name,

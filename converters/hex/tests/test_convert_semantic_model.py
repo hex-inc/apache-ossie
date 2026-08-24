@@ -28,7 +28,7 @@ from tests.utils import one_metric_ossie
 
 def test_rejects_an_unknown_base_model() -> None:
     """A name that matches no dataset would silently swallow the metrics it takes."""
-    document, _ = load_ossie_document(one_metric_ossie("COUNT(*)"))
+    document = load_ossie_document(one_metric_ossie("COUNT(*)"))
 
     with pytest.raises(ConversionError, match="--base-model 'nope'"):
         convert_ossie_semantic_model(

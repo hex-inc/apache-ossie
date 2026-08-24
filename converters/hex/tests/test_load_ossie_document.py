@@ -22,7 +22,7 @@ from ossie_hex.util.errors import ConversionError
 
 
 def test_a_normal_document() -> None:
-    document, warnings = load_ossie_document(
+    document = load_ossie_document(
         """
 version: "0.2.0.dev0"
 semantic_model:
@@ -34,7 +34,6 @@ semantic_model:
     )
 
     assert [model.name for model in document.semantic_model] == ["orders"]
-    assert warnings == []
 
 
 def test_a_malformed_document() -> None:
