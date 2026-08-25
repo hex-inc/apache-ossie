@@ -15,15 +15,30 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from inline_snapshot import snapshot
+from __future__ import annotations
 
-import ossie_hex
-from ossie_hex.cli.main import main
+from ossie import OSIDataset, OSIField
 
-
-def test_import() -> None:
-    assert ossie_hex.__all__ == snapshot(["convert_ossie_to_hex"])
+from .context import ExportContext
+from .load_ossie_field import load_ossie_field
 
 
-def test_cli_exits_zero() -> None:
-    assert main() == 0
+def load_ossie_dataset(
+    dataset: OSIDataset,
+    *,
+    ctx: ExportContext,
+) -> OSIDataset:
+    """Load an Ossie dataset.
+
+    Removes invalid fields.
+
+    Returns an Ossie dataset with only valid fields.
+    """
+    with ctx.problem_scope(dataset.name):
+        fields = list[OSIField]()
+        with ctx.problem_scope("fields"):
+            for field in dataset.fields or []:
+                if field := load_ossie_field(field, ctx=ctx):
+                    fields.append(field)
+
+    return dataset.model_copy(update={"fields": fields})
