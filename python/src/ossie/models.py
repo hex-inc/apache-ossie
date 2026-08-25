@@ -170,7 +170,7 @@ class OssieRelationship(BaseModel):
     model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     name: str
-    from_dataset: str = Field(..., alias="from")
+    from_dataset: str = Field(..., validation_alias="from", serialization_alias="from")
     to: str
     from_columns: list[str]
     to_columns: list[str]
@@ -218,7 +218,9 @@ class OssieDocument(BaseModel):
     def to_ossie_yaml(self, **kwargs: Any) -> str:
         """Serialize to Ossie-compliant YAML (uses field aliases and excludes None values)."""
         data = self.model_dump(by_alias=True, exclude_none=True, mode="json", **kwargs)
-        return yaml.dump(data, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        return yaml.dump(
+            data, default_flow_style=False, sort_keys=False, allow_unicode=True
+        )
 
     def to_ossie_json(self, **kwargs: Any) -> str:
         """Serialize to Ossie-compliant JSON (uses field aliases and excludes None values)."""
