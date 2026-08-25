@@ -34,9 +34,9 @@ from ..hex_types import (
     HexScalarExpressionDefaultNumber,
 )
 from ..util.errors import ConversionError
-from ..util.rewrite_refs import hex_refs_to_ossie, qualify_hex_ref
 from .context import ConvertHexCtx
 from .convert_hex_datatype import hex_to_ossie_datatype
+from .convert_hex_ref import qualify_hex_ref, rewrite_hex_refs
 
 _FUNC_SQL: dict[HexMeasureFuncName, str] = {
     HexMeasureFuncName.COUNT: "COUNT",
@@ -57,8 +57,6 @@ _FUNC_SQL: dict[HexMeasureFuncName, str] = {
 def convert_hex_measure(
     measure: HexMeasure,
     *,
-    model_id: str,
-    metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[OSIMetric | None, HexMeasure | None]:
     """Compile a Hex measure into an Ossie metric.
@@ -73,32 +71,30 @@ def convert_hex_measure(
     expression_sql: str
     if measure.func_calc:
         ctx.warn(
-            f"measure '{model_id}.{measure.id}' is a formula over other "
+            f"measure '{ctx.model_id}.{measure.id}' is a formula over other "
             f"measures, which an Ossie metric cannot express; no metric "
             f"was exported and the measure is preserved whole in "
             f"custom_extensions[{HEX_VENDOR}]"
         )
         return None, measure
     elif measure.func_sql:
-        expression_sql = hex_refs_to_ossie(measure.func_sql, model=model_id)
+        expression_sql = rewrite_hex_refs(measure.func_sql, ctx=ctx)
     elif measure.func:
-        expression_sql = compile_func_measure(measure, model_id=model_id)
+        expression_sql = compile_func_measure(measure, ctx=ctx)
     else:
         raise ConversionError(
-            f"measure '{model_id}.{measure.id}' has no aggregation definition"
+            f"measure '{ctx.model_id}.{measure.id}' has no aggregation definition"
         )
 
-    metric_name = measure.id
-    if metric_name in metric_names:
-        metric_name = qualified_metric_name(measure.id, model_id)
+    metric_name = ctx.claim_metric_name(measure.id)
+    if metric_name != measure.id:
         ctx.warn(
-            f"measure '{measure.id}' on '{model_id}' collided with another "
+            f"measure '{measure.id}' on '{ctx.model_id}' collided with another "
             f"metric name; exported as '{metric_name}'"
         )
-    metric_names.add(metric_name)
 
     stash = HexMeasureStash(
-        model_id=model_id,
+        model_id=ctx.model_id,
         measure_id=measure.id if metric_name != measure.id else None,
         display_name=measure.name,
         type=measure.type,
@@ -107,7 +103,7 @@ def convert_hex_measure(
     )
     if measure.semi_additive is not None:
         ctx.warn(
-            f"measure '{model_id}.{measure.id}' is semi-additive; "
+            f"measure '{ctx.model_id}.{measure.id}' is semi-additive; "
             f"structure preserved in custom_extensions[{HEX_VENDOR}]"
         )
 
@@ -130,21 +126,21 @@ def convert_hex_measure(
     return metric, None
 
 
-def compile_func_measure(measure: HexMeasure, *, model_id: str) -> str:
+def compile_func_measure(measure: HexMeasure, *, ctx: ConvertHexCtx) -> str:
     """Compile a Hex ``func``/``of``/``filters`` measure into aggregate SQL."""
     if measure.func is None:
         raise ConversionError(
-            f"measure '{model_id}.{measure.id}' has no aggregation function"
+            f"measure '{ctx.model_id}.{measure.id}' has no aggregation function"
         )
 
-    filters_sql = compile_filters(measure.filters, model_id=model_id)
+    filters_sql = compile_filters(measure.filters, ctx=ctx)
 
     if measure.func == HexMeasureFuncName.COUNT and measure.of is None:
         if filters_sql:
             return f"COUNT(CASE WHEN {filters_sql} THEN 1 END)"
-        return f"COUNT({model_id}.*)"
+        return f"COUNT({ctx.model_id}.*)"
 
-    target = compile_of(measure.of, model_id=model_id)
+    target = compile_of(measure.of, ctx=ctx)
     if measure.func == HexMeasureFuncName.COUNT_DISTINCT:
         if filters_sql:
             return f"COUNT(DISTINCT CASE WHEN {filters_sql} THEN {target} END)"
@@ -164,52 +160,44 @@ def compile_func_measure(measure: HexMeasure, *, model_id: str) -> str:
 def compile_of(
     of_value: str | HexScalarExpressionDefaultNumber | None,
     *,
-    model_id: str,
+    ctx: ConvertHexCtx,
 ) -> str:
     """Compile the value a measure aggregates over into Ossie SQL."""
     if of_value is None:
         raise ConversionError("measure `of` is required for this aggregation")
     if isinstance(of_value, str):
-        return qualify_hex_ref(of_value, model=model_id)
+        return qualify_hex_ref(of_value, ctx=ctx)
     if of_value.expr_calc:
         raise ConversionError(
             "inline `of` with expr_calc is not supported in Ossie SQL"
         )
     expr = of_value.expr_sql or ""
-    return hex_refs_to_ossie(expr, model=model_id)
+    return rewrite_hex_refs(expr, ctx=ctx)
 
 
 def compile_filters(
     filters: list[str | HexScalarExpressionDefaultBoolean],
     *,
-    model_id: str,
+    ctx: ConvertHexCtx,
 ) -> str | None:
     """Compile a measure's filters into a single Ossie SQL predicate."""
     if not filters:
         return None
     parts: list[str] = []
-    for f in filters:
-        if isinstance(f, str):
-            parts.append(qualify_hex_ref(f, model=model_id))
+    for filter in filters:
+        if isinstance(filter, str):
+            parts.append(qualify_hex_ref(filter, ctx=ctx))
         else:
-            if f.expr_calc:
+            if filter.expr_calc:
                 raise ConversionError(
                     "inline measure filter with expr_calc is not supported in Ossie SQL"
                 )
-            parts.append(hex_refs_to_ossie(f.expr_sql or "", model=model_id))
+            elif filter.expr_sql:
+                parts.append(rewrite_hex_refs(filter.expr_sql, ctx=ctx))
+            else:
+                # should never happen
+                raise ConversionError("Unexpected filter shape")
     return " AND ".join(parts)
-
-
-def qualified_metric_name(measure_id: str, model_id: str) -> str:
-    """Name the Ossie metric for a measure whose ID another model already took.
-    Hex measure IDs are unique within their model, Ossie metric names within
-    the whole document, so a measure ID that two models share has to be
-    qualified. There is no inverse anywhere in the export: a name of this shape
-    is only known to be qualified because the payload recorded the ID it was
-    built from -- anyone may author an Ossie metric called ``orders__revenue``
-    and mean it literally.
-    """
-    return f"{model_id}__{measure_id}"
 
 
 def convert_hex_measure_type(

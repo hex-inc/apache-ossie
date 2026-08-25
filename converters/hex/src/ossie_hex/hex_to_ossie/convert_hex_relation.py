@@ -28,7 +28,6 @@ from .context import ConvertHexCtx
 def convert_hex_relation(
     relation: HexRelation,
     *,
-    base_model_id: str,
     ctx: ConvertHexCtx,
 ) -> tuple[OSIRelationship | None, HexRelation | None]:
     """Export a Hex relation as an Ossie relationship, or hand it back whole.
@@ -44,17 +43,17 @@ def convert_hex_relation(
 
     if parsed is None:
         ctx.warn(
-            f"relation '{base_model_id}.{relation.id}' join_sql could not be "
+            f"relation '{ctx.model_id}.{relation.id}' join_sql could not be "
             f"decomposed into column pairs; preserved in custom_extensions[{HEX_VENDOR}]"
         )
         return None, relation
 
     local_cols, remote_cols = parsed
-    from_ds, to_ds = base_model_id, relation.target
+    from_ds, to_ds = ctx.model_id, relation.target
     from_cols, to_cols = local_cols, remote_cols
     if relation.type == HexRelationType.ONE_TO_MANY:
         # Ossie `from` is the many side.
-        from_ds, to_ds = relation.target, base_model_id
+        from_ds, to_ds = relation.target, ctx.model_id
         from_cols, to_cols = remote_cols, local_cols
 
     # The join itself is not recorded. Everything `parse_equi_join` accepts is a

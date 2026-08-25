@@ -30,35 +30,27 @@ from .convert_hex_relation import convert_hex_relation
 def convert_hex_model(
     model: HexModel,
     *,
-    metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[OSIDataset, list[OSIMetric], list[OSIRelationship]]:
     """Convert a Hex model to an Ossie dataset and the document-level entries it adds."""
     # Relations are converted first because whether a dimension's reference to
     # another model survives the trip back depends on which of them become
     # relationships.
-    (
-        relationships,
-        unsupported_relations,
-    ) = convert_hex_model_relations(model, ctx=ctx)
+    relationships, unsupported_relations = convert_hex_model_relations(
+        model.relations, ctx=ctx
+    )
 
     (
         fields,
         unsupported_dimensions,
         primary_key,
         unique_keys,
-    ) = convert_hex_model_dimensions(
-        model,
-        ctx=ctx,
-    )
+    ) = convert_hex_model_dimensions(model.dimensions, ctx=ctx)
 
-    metrics, unsupported_measures = convert_hex_model_measures(
-        model,
-        metric_names=metric_names,
-        ctx=ctx,
-    )
+    metrics, unsupported_measures = convert_hex_model_measures(model.measures, ctx=ctx)
 
     # even though our parsing does well, it's better to be safe and preserve
+    source = model.base_sql_table or model.base_sql_query or ""
     source_kind = "table" if model.base_sql_table else "query"
 
     stash = HexModelStash(
@@ -72,7 +64,7 @@ def convert_hex_model(
 
     dataset = OSIDataset(
         name=model.id,
-        source=model.base_sql_table or model.base_sql_query or "",
+        source=source,
         primary_key=primary_key,
         unique_keys=unique_keys,
         description=model.description or None,
@@ -84,28 +76,28 @@ def convert_hex_model(
 
 
 def convert_hex_model_relations(
-    model: HexModel,
+    relations: list[HexRelation],
     *,
     ctx: ConvertHexCtx,
 ) -> tuple[list[OSIRelationship], list[HexRelation]]:
-    """Convert a model's relations, preserving ones Ossie cannot express."""
+    """Convert a model's relations."""
     relationships: list[OSIRelationship] = []
     unsupported_relations: list[HexRelation] = []
-    for relation in model.relations:
+    for relation in relations:
         relationship, unsupported_relation = convert_hex_relation(
             relation,
-            base_model_id=model.id,
             ctx=ctx,
         )
         if relationship is not None:
             relationships.append(relationship)
+            ctx.register_relation(relation)
         elif unsupported_relation is not None:
             unsupported_relations.append(unsupported_relation)
     return relationships, unsupported_relations
 
 
 def convert_hex_model_dimensions(
-    model: HexModel,
+    dimensions: list[HexDimension],
     *,
     ctx: ConvertHexCtx,
 ) -> tuple[
@@ -126,10 +118,9 @@ def convert_hex_model_dimensions(
     unsupported_dimensions: list[HexDimension] = []
     unique_field_names: list[str] = []
 
-    for dim in model.dimensions:
+    for dim in dimensions:
         field, unsupported_dimension = convert_hex_dimension(
             dim,
-            model_id=model.id,
             ctx=ctx,
         )
         if field is not None:
@@ -152,19 +143,16 @@ def convert_hex_model_dimensions(
 
 
 def convert_hex_model_measures(
-    model: HexModel,
+    measures: list[HexMeasure],
     *,
-    metric_names: set[str],
     ctx: ConvertHexCtx,
 ) -> tuple[list[OSIMetric], list[HexMeasure]]:
     """Convert a model's measures, setting aside the ones Ossie cannot express."""
     metrics: list[OSIMetric] = []
     unsupported_measures: list[HexMeasure] = []
-    for measure in model.measures:
+    for measure in measures:
         metric, unsupported_measure = convert_hex_measure(
             measure,
-            model_id=model.id,
-            metric_names=metric_names,
             ctx=ctx,
         )
         if metric is not None:

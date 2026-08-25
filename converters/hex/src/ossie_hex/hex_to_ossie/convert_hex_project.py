@@ -17,6 +17,8 @@
 
 from __future__ import annotations
 
+from typing import assert_never
+
 from ossie import (
     OSIDataset,
     OSIDocument,
@@ -44,27 +46,32 @@ def convert_hex_project(
 
     Returns ``(ossie_document, warnings)``.
     """
+    # Register every model before conversion so cross-model lookup does not
+    # depend on project resource order.
+    for resource in hex_project.resources:
+        if isinstance(resource, HexModel):
+            ctx.register_dimensions(resource)
+
     datasets: list[OSIDataset] = []
     relationships: list[OSIRelationship] = []
     metrics: list[OSIMetric] = []
     views_stash: list[HexViewStash] = []
-    metric_names: set[str] = set()
 
     for resource in hex_project.resources:
         if isinstance(resource, HexView):
-            view_stash = convert_hex_view(resource, ctx=ctx)
+            view = resource
+            view_stash = convert_hex_view(view, ctx=ctx)
             views_stash.append(view_stash)
             continue
-
-        assert isinstance(resource, HexModel)
-        dataset, ds_metrics, ds_rels = convert_hex_model(
-            resource,
-            metric_names=metric_names,
-            ctx=ctx,
-        )
-        datasets.append(dataset)
-        metrics.extend(ds_metrics)
-        relationships.extend(ds_rels)
+        elif isinstance(resource, HexModel):
+            model = resource
+            with ctx.model_scope(model):
+                dataset, ds_metrics, ds_rels = convert_hex_model(model, ctx=ctx)
+            datasets.append(dataset)
+            metrics.extend(ds_metrics)
+            relationships.extend(ds_rels)
+        else:
+            assert_never(resource)
 
     if not datasets:
         raise ConversionError("Hex project contains no convertible models")

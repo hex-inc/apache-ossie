@@ -21,15 +21,14 @@ from ossie import OSIDialectExpression, OSIExpression, OSIField
 
 from ..hex_extension import HexDimensionStash, maybe_write_extension
 from ..hex_types import HexDimension
-from ..util.rewrite_refs import hex_refs_to_ossie
 from .context import ConvertHexCtx
 from .convert_hex_datatype import hex_to_ossie_datatype
+from .convert_hex_ref import rewrite_hex_refs
 
 
 def convert_hex_dimension(
     dim: HexDimension,
     *,
-    model_id: str,
     ctx: ConvertHexCtx,
 ) -> tuple[OSIField | None, HexDimension | None]:
     """Convert a Hex dimension to an Ossie field, or hand it back whole.
@@ -40,7 +39,7 @@ def convert_hex_dimension(
     """
     if dim.expr_calc:
         ctx.warn(
-            f"dimension '{model_id}.{dim.id}' uses Hex calculation formula "
+            f"dimension '{ctx.model_id}.{dim.id}' uses Hex calculation formula "
             f"syntax, which conversion to Ossie is not supported."
         )
         return None, dim
@@ -50,7 +49,7 @@ def convert_hex_dimension(
     else:
         # Qualifying a `${dim}` ref as `model.dim` is what lets the export tell it
         # apart from a bare column of the source table and restore the reference.
-        expression_sql = hex_refs_to_ossie(dim.expr_sql, model=model_id)
+        expression_sql = rewrite_hex_refs(dim.expr_sql, ctx=ctx)
 
     stash = HexDimensionStash(
         type=dim.type,
