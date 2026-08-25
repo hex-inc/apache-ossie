@@ -17,14 +17,15 @@
 
 from __future__ import annotations
 
-from ossie import OSIDialect, OSIRelationship, OSISemanticModel
+from ossie import OSIDialect, OSIMetric, OSIRelationship, OSISemanticModel
 
-from ..hex_extension import HexProjectStash, read_stash
+from ..hex_extension import HexMeasureStash, HexProjectStash, read_stash
 from ..hex_types import HexModel, HexResource
 from ..util.errors import ConversionError, ConversionWarning
-from .assign_ossie_metrics import assign_ossie_metrics
+from ..util.pick_expression import pick_expression
 from .convert_ossie_dataset import convert_ossie_dataset
 from .hex_ids import dataset_hex_ids, dimension_hex_ids
+from .references import references
 from .relationship_sides import relationship_sides
 from .restore_hex_views import restore_hex_views
 
@@ -75,7 +76,7 @@ def convert_ossie_semantic_model(
         base = hex_ids_by_dataset.get(local, local)
         relations_by_dataset.setdefault(base, []).append(rel)
 
-    metrics_by_dataset = assign_ossie_metrics(
+    metrics_by_dataset = _assign_ossie_metrics(
         ossie_semantic_model,
         hex_ids_by_dataset=hex_ids_by_dataset,
         base_model_id=base_model_id,
@@ -103,3 +104,69 @@ def convert_ossie_semantic_model(
     hex_views = restore_hex_views(hex_project_stash, taken_ids=taken_hex_resource_ids)
     hex_resources = hex_models + hex_views
     return hex_resources, warnings
+
+
+def _assign_ossie_metrics(
+    model: OSISemanticModel,
+    *,
+    hex_ids_by_dataset: dict[str, str],
+    base_model_id: str | None,
+    preferred_dialect: OSIDialect,
+) -> dict[str, list[OSIMetric]]:
+    """Group a semantic model's metrics by the Hex model each belongs to.
+
+    Ossie metrics sit beside the datasets rather than on one, while a Hex
+    measure always belongs to a model, so every metric has to be placed before
+    it can be converted.
+
+    A metric goes where its custom extension says, else to the single dataset
+    its expression names, else to ``base_model_id``. A metric that names several
+    datasets with no base model to fall back on is an error rather than a guess.
+    """
+    ossie_dataset_names = set(hex_ids_by_dataset)
+    hex_model_ids = set(hex_ids_by_dataset.values())
+
+    metrics_by_dataset: dict[str, list[OSIMetric]] = {}
+    unassigned: list[OSIMetric] = []
+    for metric in model.metrics or []:
+        stash = read_stash(metric.custom_extensions, HexMeasureStash)
+        ds_id = stash.model_id if stash is not None else None
+        if ds_id and ds_id in hex_model_ids:
+            metrics_by_dataset.setdefault(ds_id, []).append(metric)
+            continue
+        refs = _datasets_referenced(metric, preferred_dialect, ossie_dataset_names)
+        if len(refs) == 1:
+            metrics_by_dataset.setdefault(hex_ids_by_dataset[refs[0]], []).append(
+                metric
+            )
+        elif len(refs) == 0 and base_model_id:
+            metrics_by_dataset.setdefault(base_model_id, []).append(metric)
+        elif len(refs) == 0 and len(hex_model_ids) == 1:
+            metrics_by_dataset.setdefault(next(iter(hex_model_ids)), []).append(metric)
+        else:
+            unassigned.append(metric)
+
+    if unassigned:
+        if base_model_id:
+            for metric in unassigned:
+                metrics_by_dataset.setdefault(base_model_id, []).append(metric)
+        else:
+            names = ", ".join(m.name for m in unassigned)
+            raise ConversionError(
+                f"Could not assign metric(s) to a Hex model: {names}. "
+                f"Pass --base-model to choose a dataset."
+            )
+
+    return metrics_by_dataset
+
+
+def _datasets_referenced(
+    metric: OSIMetric,
+    preferred_dialect: OSIDialect,
+    dataset_names: set[str],
+) -> list[str]:
+    """Names from ``dataset_names`` that the metric's expression qualifies."""
+    expr = pick_expression(metric.expression, preferred=preferred_dialect)
+    if not expr:
+        return []
+    return [name for name in dataset_names if references(expr, name)]
