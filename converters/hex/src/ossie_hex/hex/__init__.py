@@ -15,8 +15,36 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from .ossie_to_hex import convert_ossie_field
+from ._brand import (
+    HexDataType,
+    HexDialect,
+    HexDialectName,
+    HexDimension,
+    HexEntityId,
+    HexMeasure,
+    HexModel,
+    HexProject,
+    HexRelation,
+    HexRelationType,
+    HexResource,
+    HexVisibility,
+)
+from .hex_sql import HexSql
+from .utils import is_temporal_hex_datatype
 
 __all__ = [
-    "convert_ossie_field",
+    "HexDataType",
+    "HexDialect",
+    "HexDialectName",
+    "HexDimension",
+    "HexEntityId",
+    "HexMeasure",
+    "HexModel",
+    "HexProject",
+    "HexRelation",
+    "HexRelationType",
+    "HexResource",
+    "HexSql",
+    "HexVisibility",
+    "is_temporal_hex_datatype",
 ]

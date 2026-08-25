@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from .ossie_to_hex import convert_ossie_field
+from .convert_ossie_to_hex import convert_ossie_to_hex
 
-__all__ = [
-    "convert_ossie_field",
-]
+__all__ = ["convert_ossie_to_hex"]

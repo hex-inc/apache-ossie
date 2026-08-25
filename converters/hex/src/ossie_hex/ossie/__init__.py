@@ -15,8 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from .ossie_to_hex import convert_ossie_field
+from .ossie_field_expr import (
+    OSSIE_QUALIFIED_FIELD_EXPR_SCAN_RE,
+)
 
 __all__ = [
-    "convert_ossie_field",
+    "OSSIE_QUALIFIED_FIELD_EXPR_SCAN_RE",
 ]
