@@ -23,7 +23,6 @@ from ..hex import HexModel
 from ..util.database_table import is_table_name
 from .context import ExportContext
 from .convert_ossie_field import convert_ossie_field
-from .convert_ossie_name import convert_ossie_name
 
 
 def convert_ossie_dataset(
@@ -34,12 +33,11 @@ def convert_ossie_dataset(
     with ctx.problem_scope(ossie_dataset.name):
         spec: dict[str, Any] = {}
 
-        with ctx.problem_scope("name"):
-            hex_entity_id = convert_ossie_name(ossie_dataset.name, ctx=ctx)
-            if hex_entity_id is None:
-                return None
-            spec["id"] = hex_entity_id
+        hex_model_id = ctx.hex_ids.for_dataset(ossie_dataset.name)
+        if hex_model_id is None:
+            return None
 
+        spec["id"] = hex_model_id
         spec["type"] = "model"
 
         if ossie_dataset.description:
@@ -77,13 +75,15 @@ def convert_ossie_dataset(
                 else:
                     unique_field_names.add(key[0])
 
-        with ctx.fields_scope(unique_field_names):
+        with ctx.fields_scope(
+            unique_field_names=unique_field_names,
+            dataset_name=ossie_dataset.name,
+        ):
             if ossie_dataset.fields:
                 spec["dimensions"] = []
                 for ossie_field in ossie_dataset.fields:
                     if hex_dimension := convert_ossie_field(ossie_field, ctx=ctx):
                         spec["dimensions"].append(hex_dimension)
-                        # TODO: register name
             else:
                 ctx.warn("Dataset fields are empty")
 
@@ -99,14 +99,9 @@ def convert_ossie_dataset(
         # - HexModel.name: Ossie does not encode a display name
         # - HexModel.visibility: Ossie does not support this concept
 
-        # TODO: HexModel.measures
-        # - look at measures from ctx
-        # - find ones that are appropriate to attach to this model
+        # These start empty and are populated after assignment planning. Set them
+        # explicitly so later HexProject validation preserves the appended values.
         spec["measures"] = []
-
-        # TODO: HexModel.relations
-        # - look at relationships from ctx
-        # - find ones that are appropriate to attach to this model
         spec["relations"] = []
 
         return HexModel(**spec)

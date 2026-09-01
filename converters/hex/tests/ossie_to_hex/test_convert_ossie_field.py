@@ -22,11 +22,10 @@ from inline_snapshot import snapshot
 from ossie import (
     OSIAIContextObject,
     OSICustomExtension,
-    OSIDialect,
     OSIDimension,
 )
 
-from ossie_hex.hex import HexDataType, HexDialect
+from ossie_hex.hex import HexDataType
 from ossie_hex.ossie_to_hex.context import ExportContext
 from ossie_hex.ossie_to_hex.convert_ossie_field import convert_ossie_field
 from tests.ossie_to_hex.utils import Quick
@@ -36,11 +35,12 @@ from tests.utils import problems_snapshot
 @pytest.fixture
 def ctx() -> Iterator[ExportContext]:
     ctx = ExportContext()
-    ctx.set_dialects(
-        ossie_dialect=OSIDialect.ANSI_SQL, hex_dialect=HexDialect("duckdb")
-    )
-    with ctx.fields_scope(unique_field_names=set()):
-        yield ctx
+    ctx._set_dialects("ANSI_SQL", "duckdb")
+    with ctx.semantic_model_scope("model"):
+        ctx.hex_ids.set_for_dataset("dataset", "dataset")
+        ctx.hex_ids.set_for_field("dataset", "foo", "foo")
+        with ctx.fields_scope(unique_field_names=set(), dataset_name="dataset"):
+            yield ctx
 
 
 def test_preserve_name(ctx: ExportContext) -> None:

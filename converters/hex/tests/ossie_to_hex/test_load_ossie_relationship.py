@@ -17,9 +17,7 @@
 
 import pytest
 from inline_snapshot import snapshot
-from ossie import OSIDialect
 
-from ossie_hex.hex import HexDialect
 from ossie_hex.ossie_to_hex.context import ExportContext
 from ossie_hex.ossie_to_hex.load_ossie_relationship import validate_ossie_relationship
 from tests.ossie_to_hex.utils import Quick
@@ -29,9 +27,7 @@ from tests.utils import problems_snapshot
 @pytest.fixture
 def ctx() -> ExportContext:
     ctx = ExportContext()
-    ctx.set_dialects(
-        ossie_dialect=OSIDialect.ANSI_SQL, hex_dialect=HexDialect("duckdb")
-    )
+    ctx._set_dialects("ANSI_SQL", "duckdb")
     return ctx
 
 

@@ -15,11 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from collections.abc import Iterator
+
 import pytest
 from inline_snapshot import snapshot
-from ossie import OSIAIContextObject, OSICustomExtension, OSIDialect
+from ossie import OSIAIContextObject, OSICustomExtension
 
-from ossie_hex.hex import HexDialect
 from ossie_hex.ossie_to_hex.context import ExportContext
 from ossie_hex.ossie_to_hex.convert_ossie_dataset import convert_ossie_dataset
 from tests.ossie_to_hex.utils import Quick
@@ -27,12 +28,13 @@ from tests.utils import problems_snapshot
 
 
 @pytest.fixture
-def ctx() -> ExportContext:
+def ctx() -> Iterator[ExportContext]:
     ctx = ExportContext()
-    ctx.set_dialects(
-        ossie_dialect=OSIDialect.ANSI_SQL, hex_dialect=HexDialect("duckdb")
-    )
-    return ctx
+    ctx._set_dialects("ANSI_SQL", "duckdb")
+    with ctx.semantic_model_scope("model"):
+        ctx.hex_ids.set_for_dataset("foo", "foo")
+        ctx.hex_ids.set_for_field("foo", "id", "id")
+        yield ctx
 
 
 def test_preserve_name(ctx: ExportContext) -> None:
@@ -45,6 +47,8 @@ def test_preserve_name(ctx: ExportContext) -> None:
     result = convert_ossie_dataset(foo, ctx=ctx)
     assert result is not None
     assert result.id == name
+    assert result.measures == []
+    assert result.relations == []
     assert not ctx.problems
 
 
