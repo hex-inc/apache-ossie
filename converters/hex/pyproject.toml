@@ -21,6 +21,10 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "apache-ossie-databricks",
+    "apache-ossie-nvidia-gsf",
+    "apache-ossie-orionbelt; python_version >= '3.12'",
+    "osi-omni",
     "pytest>=9.1.1",
     "ruff>=0.16.4",
     "syrupy>=6.0.0",
@@ -107,3 +111,7 @@ test = "pytest"
 # package for now. Remove this block once apache-ossie is published to PyPI.
 [tool.uv.sources]
 apache-ossie = { path = "../../python", editable = true }
+apache-ossie-databricks = { path = "../databricks", editable = true }
+apache-ossie-nvidia-gsf = { path = "../nvidia", editable = true }
+apache-ossie-orionbelt = { path = "../orionbelt", editable = true }
+osi-omni = { path = "../omni", editable = true }

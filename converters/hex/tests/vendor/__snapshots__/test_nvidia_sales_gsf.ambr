@@ -1,0 +1,80 @@
+# serializer version: 1
+# name: test_nvidia_sales_gsf_to_hex[hex_files]
+  '''
+  --- analytics/customers.yml ---
+  id: customers
+  base_sql_table: analytics.public.customers
+  dimensions:
+  - id: customer_id
+    type: string
+    expr_sql: customer_id
+    unique: true
+  - id: customer_name
+    type: string
+    expr_sql: name
+  
+  --- analytics/orders.yml ---
+  id: orders
+  description: Orders
+  base_sql_table: analytics.public.orders
+  dimensions:
+  - id: order_id
+    type: string
+    expr_sql: order_id
+    unique: true
+  - id: customer_id
+    type: string
+    expr_sql: customer_id
+  - id: order_date
+    type: string
+    expr_sql: order_date
+  - id: net_total
+    type: string
+    expr_sql: subtotal - discount
+  relations:
+  - id: orders_to_customers
+    target: customers
+    type: many_to_one
+    join_sql: customer_id = ${orders_to_customers}.customer_id
+  
+  '''
+# ---
+# name: test_nvidia_sales_gsf_to_hex[problems]
+  '''
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'orders', 'fields', 'order_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'orders', 'fields', 'customer_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'orders', 'fields', 'order_date', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'orders', 'fields', 'net_total', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'customers', 'fields', 'customer_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'analytics', 'datasets', 'customers', 'fields', 'customer_name', 'datatype']
+  
+  [ERROR] Field expression references field not in semantic model: orders.subtotal
+  Cause: ['semantic_model', 'analytics', 'metrics', 'revenue_per_customer', 'expression', 'dialects', 'ANSI_SQL']
+  
+  [ERROR] Expression must have at least one valid dialect
+  Cause: ['semantic_model', 'analytics', 'metrics', 'revenue_per_customer', 'expression', 'dialects']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'analytics', 'metrics', 'revenue_per_customer', 'datatype']
+  
+  [INFO] No Ossie dialect specified; using ANSI_SQL
+  Cause: []
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'analytics', 'datasets', 'orders', 'fields', 'net_total', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'analytics', 'custom_extensions']
+  '''
+# ---

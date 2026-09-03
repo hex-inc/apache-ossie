@@ -1,0 +1,464 @@
+# serializer version: 1
+# name: test_omni_tpcds_to_hex[hex_files]
+  '''
+  --- tpcds_retail_model/customer.yml ---
+  id: customer
+  description: Customer dimension with demographic information
+  base_sql_table: tpcds.public.customer
+  dimensions:
+  - id: c_customer_sk
+    description: Surrogate key for customer
+    type: string
+    expr_sql: c_customer_sk
+    unique: true
+  - id: c_customer_id
+    description: Business key for customer
+    type: string
+    expr_sql: c_customer_id
+  - id: c_first_name
+    description: Customer first name
+    type: string
+    expr_sql: c_first_name
+  - id: c_last_name
+    description: Customer last name
+    type: string
+    expr_sql: c_last_name
+  - id: customer_full_name
+    description: Customer full name (computed field)
+    type: string
+    expr_sql: c_first_name || ' ' || c_last_name
+  - id: c_email_address
+    description: Customer email address
+    type: string
+    expr_sql: c_email_address
+  
+  --- tpcds_retail_model/date_dim.yml ---
+  id: date_dim
+  description: Date dimension with calendar attributes
+  base_sql_table: tpcds.public.date_dim
+  dimensions:
+  - id: d_date_sk
+    description: Surrogate key for date
+    type: string
+    expr_sql: d_date_sk
+    unique: true
+  - id: d_date
+    description: Actual date value
+    type: string
+    expr_sql: d_date
+  - id: d_year
+    description: Year
+    type: string
+    expr_sql: d_year
+  - id: d_quarter_name
+    description: Quarter name (e.g., 2024Q1)
+    type: string
+    expr_sql: d_quarter_name
+  - id: d_month_name
+    description: Month name
+    type: string
+    expr_sql: d_month_name
+  
+  --- tpcds_retail_model/item.yml ---
+  id: item
+  description: Item/Product dimension with product attributes
+  base_sql_table: tpcds.public.item
+  dimensions:
+  - id: i_item_sk
+    description: Surrogate key for item
+    type: string
+    expr_sql: i_item_sk
+    unique: true
+  - id: i_item_id
+    description: Business key for item
+    type: string
+    expr_sql: i_item_id
+  - id: i_item_desc
+    description: Item description
+    type: string
+    expr_sql: i_item_desc
+  - id: i_brand
+    description: Brand name
+    type: string
+    expr_sql: i_brand
+  - id: i_category
+    description: Item category
+    type: string
+    expr_sql: i_category
+  - id: i_current_price
+    description: Current price of the item
+    type: string
+    expr_sql: i_current_price
+  
+  --- tpcds_retail_model/store.yml ---
+  id: store
+  description: Store dimension with location and store attributes
+  base_sql_table: tpcds.public.store
+  dimensions:
+  - id: s_store_sk
+    description: Surrogate key for store
+    type: string
+    expr_sql: s_store_sk
+    unique: true
+  - id: s_store_id
+    description: Business key for store
+    type: string
+    expr_sql: s_store_id
+  - id: s_store_name
+    description: Store name
+    type: string
+    expr_sql: s_store_name
+  - id: s_city
+    description: City where store is located
+    type: string
+    expr_sql: s_city
+  - id: s_state
+    description: State where store is located
+    type: string
+    expr_sql: s_state
+  - id: s_number_employees
+    description: Number of employees at the store
+    type: string
+    expr_sql: s_number_employees
+  
+  --- tpcds_retail_model/store_sales.yml ---
+  id: store_sales
+  description: Fact table containing all store sales transactions
+  base_sql_table: tpcds.public.store_sales
+  dimensions:
+  - id: ss_sold_date_sk
+    description: Foreign key to date dimension
+    type: string
+    expr_sql: ss_sold_date_sk
+  - id: ss_item_sk
+    description: Foreign key to item dimension
+    type: string
+    expr_sql: ss_item_sk
+  - id: ss_customer_sk
+    description: Foreign key to customer dimension
+    type: string
+    expr_sql: ss_customer_sk
+  - id: ss_store_sk
+    description: Foreign key to store dimension
+    type: string
+    expr_sql: ss_store_sk
+  - id: ss_quantity
+    description: Quantity of items sold
+    type: string
+    expr_sql: ss_quantity
+  - id: ss_sales_price
+    description: Sales price per unit
+    type: string
+    expr_sql: ss_sales_price
+  - id: ss_ext_sales_price
+    description: Extended sales price (quantity * price)
+    type: string
+    expr_sql: ss_ext_sales_price
+  - id: ss_net_profit
+    description: Net profit from the sale
+    type: string
+    expr_sql: ss_net_profit
+  - id: ss_ticket_number
+    type: string
+    expr_sql: ss_ticket_number
+  measures:
+  - id: total_sales
+    description: Total sales revenue across all transactions
+    func_sql: SUM(${ss_ext_sales_price})
+  - id: total_profit
+    description: Total net profit from store sales
+    func_sql: SUM(${ss_net_profit})
+  - id: customer_lifetime_value
+    description: Average lifetime sales value per customer
+    func_sql: SUM(${ss_ext_sales_price}) / COUNT(DISTINCT ${store_sales_to_customer.c_customer_sk})
+  - id: sales_by_brand
+    description: Total sales by brand (requires grouping by item.i_brand)
+    func_sql: SUM(${ss_ext_sales_price})
+  - id: store_productivity
+    description: Sales per employee across stores
+    func_sql: SUM(${ss_ext_sales_price}) / NULLIF(SUM(${store_sales_to_store.s_number_employees}),
+      0)
+  relations:
+  - id: store_sales_to_date_dim
+    target: date_dim
+    type: many_to_one
+    join_sql: ss_sold_date_sk = ${store_sales_to_date_dim}.d_date_sk
+  - id: store_sales_to_customer
+    target: customer
+    type: many_to_one
+    join_sql: ss_customer_sk = ${store_sales_to_customer}.c_customer_sk
+  - id: store_sales_to_item
+    target: item
+    type: many_to_one
+    join_sql: ss_item_sk = ${store_sales_to_item}.i_item_sk
+  - id: store_sales_to_store
+    target: store
+    type: many_to_one
+    join_sql: ss_store_sk = ${store_sales_to_store}.s_store_sk
+  
+  '''
+# ---
+# name: test_omni_tpcds_to_hex[problems]
+  '''
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_customer_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_customer_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_first_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_last_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'customer_full_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_email_address', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_date_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_date', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_year', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_quarter_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_month_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_item_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_item_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_item_desc', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_brand', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_category', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_current_price', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_store_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_store_id', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_store_name', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_city', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_state', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_number_employees', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_sold_date_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_item_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_customer_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_store_sk', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_quantity', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_sales_price', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_ext_sales_price', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_net_profit', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'String'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_ticket_number', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'total_sales', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'total_profit', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'customer_lifetime_value', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'sales_by_brand', 'datatype']
+  
+  [WARNING] Missing. Hex requires a datatype. Using default 'Decimal'.
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'store_productivity', 'datatype']
+  
+  [INFO] No Ossie dialect specified; using ANSI_SQL
+  Cause: []
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_customer_id', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'customer_full_name', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'customer', 'fields', 'c_email_address', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_date', 'dimension']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_date', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_date', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_year', 'dimension']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_year', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_year', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_quarter_name', 'dimension']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_quarter_name', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_quarter_name', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_month_name', 'dimension']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_month_name', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'date_dim', 'fields', 'd_month_name', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_item_id', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_item_desc', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_brand', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_category', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'item', 'fields', 'i_current_price', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_store_id', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_store_name', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_city', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_state', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store', 'fields', 's_number_employees', 'ai_context']
+  
+  [WARNING] Composite primary key is not supported: ['ss_item_sk', 'ss_ticket_number']
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'primary_key']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_sold_date_sk', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_item_sk', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_customer_sk', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_store_sk', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_quantity', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_sales_price', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_ext_sales_price', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_net_profit', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'datasets', 'store_sales', 'fields', 'ss_ticket_number', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'relationships', 'store_sales_to_date_dim', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'relationships', 'store_sales_to_customer', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'relationships', 'store_sales_to_item', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'relationships', 'store_sales_to_store', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'total_sales', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'total_profit', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'customer_lifetime_value', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'customer_lifetime_value', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'sales_by_brand', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'store_productivity', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'metrics', 'store_productivity', 'custom_extensions']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'description']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'ai_context']
+  
+  [WARNING] Not supported
+  Cause: ['semantic_model', 'tpcds_retail_model', 'custom_extensions']
+  '''
+# ---
