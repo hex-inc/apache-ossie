@@ -27,6 +27,9 @@ def load_ossie_datatype(
     ctx: ExportContext,
 ) -> OSIDataType:
     if ossie_datatype is None:
-        ctx.warn(f"Missing. Hex requires a datatype. Using default '{default.value}'.")
+        ctx.warn(
+            f"Missing. Hex requires a datatype. Using default '{default.value}'.",
+            code="missing-datatype",
+        )
         return default
     return ossie_datatype
