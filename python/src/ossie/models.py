@@ -71,6 +71,7 @@ class OssieVendor(str, Enum):
     GOODDATA = "GOODDATA"
     SEMANTIDO = "SEMANTIDO"
     WISDOM = "WISDOM"
+    HEX = "HEX"
 
 
 class OssieAIContextObject(BaseModel):
