@@ -15,18 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pytest
-from inline_snapshot import snapshot
+from .analysis import (
+    RELATIONSHIP_DIRECTIONS,
+    MetricAnalysis,
+    RelationshipAnalysis,
+    RelationshipAnalysisEdge,
+)
+from .assignment import MetricAssignment, RelationshipAssignment
+from .context import ExportContext
 
-import ossie_hex
-from ossie_hex.cli.main import main
-
-
-def test_import() -> None:
-    assert ossie_hex.__all__ == snapshot(["convert_ossie_to_hex"])
-
-
-def test_cli_exits_zero() -> None:
-    with pytest.raises(SystemExit) as exc:
-        main(["--help"])
-    assert exc.value.code == 0
+__all__ = [
+    "RELATIONSHIP_DIRECTIONS",
+    "ExportContext",
+    "MetricAnalysis",
+    "MetricAssignment",
+    "RelationshipAnalysis",
+    "RelationshipAnalysisEdge",
+    "RelationshipAssignment",
+]

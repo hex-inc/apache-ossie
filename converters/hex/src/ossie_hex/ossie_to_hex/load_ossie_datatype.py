@@ -15,18 +15,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pytest
-from inline_snapshot import snapshot
+from ossie import OssieDataType
 
-import ossie_hex
-from ossie_hex.cli.main import main
+from .context import ExportContext
 
 
-def test_import() -> None:
-    assert ossie_hex.__all__ == snapshot(["convert_ossie_to_hex"])
-
-
-def test_cli_exits_zero() -> None:
-    with pytest.raises(SystemExit) as exc:
-        main(["--help"])
-    assert exc.value.code == 0
+def load_ossie_datatype(
+    ossie_datatype: OssieDataType | None,
+    *,
+    default: OssieDataType,
+    ctx: ExportContext,
+) -> OssieDataType:
+    if ossie_datatype is None:
+        ctx.warn(
+            f"Missing. Hex requires a datatype. Using default '{default.value}'.",
+            code="missing-datatype",
+        )
+        return default
+    return ossie_datatype
