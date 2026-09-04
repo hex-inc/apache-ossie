@@ -47,7 +47,7 @@ def test_loads_valid_document(ctx: ExportContext, tmp_path: Path) -> None:
         """
     )
     path.write_text(data, encoding="utf-8")
-    result = load_ossie_document(document_path=str(path), ctx=ctx)
+    result = load_ossie_document(str(path), ctx=ctx)
     assert result is not None
     assert result.semantic_model[0].name == "foo"
     assert result.semantic_model[0].datasets[0].name == "bar"
@@ -57,7 +57,7 @@ def test_loads_valid_document(ctx: ExportContext, tmp_path: Path) -> None:
 
 def test_missing_file(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "missing.yml"
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot("[FATAL] File does not exist: `PATH`")
 
@@ -65,7 +65,7 @@ def test_missing_file(ctx: ExportContext, tmp_path: Path) -> None:
 def test_rejects_directory(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "adir"
     path.mkdir()
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot("[FATAL] File is not a file: `PATH`")
 
@@ -73,7 +73,7 @@ def test_rejects_directory(ctx: ExportContext, tmp_path: Path) -> None:
 def test_empty_file(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "empty.yml"
     path.write_text("", encoding="utf-8")
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot("[FATAL] File is empty: `PATH`")
 
@@ -81,7 +81,7 @@ def test_empty_file(ctx: ExportContext, tmp_path: Path) -> None:
 def test_invalid_yaml(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "bad.yml"
     path.write_text("invalid: yaml: [", encoding="utf-8")
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot(
         """\
@@ -96,7 +96,7 @@ def test_invalid_yaml(ctx: ExportContext, tmp_path: Path) -> None:
 def test_yaml_must_be_a_mapping(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "list.yml"
     path.write_text("- foo\n", encoding="utf-8")
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot(
         """\
@@ -109,7 +109,7 @@ def test_yaml_must_be_a_mapping(ctx: ExportContext, tmp_path: Path) -> None:
 def test_invalid_ossie_document(ctx: ExportContext, tmp_path: Path) -> None:
     path = tmp_path / "invalid.yml"
     path.write_text("foo: bar\n", encoding="utf-8")
-    result = load_ossie_document(document_path=path, ctx=ctx)
+    result = load_ossie_document(path, ctx=ctx)
     assert result is None
     assert _problems(ctx, path) == snapshot(
         """\
