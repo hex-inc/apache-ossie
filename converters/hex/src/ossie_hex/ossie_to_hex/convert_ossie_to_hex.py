@@ -54,7 +54,7 @@ def convert_ossie_to_hex(
     ctx = ExportContext()
 
     with ctx.phase_scope("load"):
-        ossie_document = load_ossie_document(document_path=input, ctx=ctx)
+        ossie_document = load_ossie_document(input, ctx=ctx)
         ossie_dialect = load_ossie_dialect(dialect, ctx=ctx)
 
     with ctx.phase_scope("convert"):

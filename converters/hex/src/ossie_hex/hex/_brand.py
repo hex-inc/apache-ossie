@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from hex_sl_utils.spec.load import load_project as load_hex_project
+from hex_sl_utils.spec.load import load_project_files as load_hex_project_files
+from hex_sl_utils.spec.types import CanonicalDialectName as HexCanonicalDialectName
 from hex_sl_utils.spec.types import DataType as HexDataType
 from hex_sl_utils.spec.types import Dialect as HexDialect
 from hex_sl_utils.spec.types import DialectName as HexDialectName
@@ -26,9 +29,11 @@ from hex_sl_utils.spec.types import Project as HexProject
 from hex_sl_utils.spec.types import Relation as HexRelation
 from hex_sl_utils.spec.types import RelationType as HexRelationType
 from hex_sl_utils.spec.types import Resource as HexResource
+from hex_sl_utils.spec.types import ScalarExpression as HexScalarExpression
 from hex_sl_utils.spec.types import Visibility as HexVisibility
 
 __all__ = [
+    "HexCanonicalDialectName",
     "HexDataType",
     "HexDialect",
     "HexDialectName",
@@ -40,5 +45,8 @@ __all__ = [
     "HexRelation",
     "HexRelationType",
     "HexResource",
+    "HexScalarExpression",
     "HexVisibility",
+    "load_hex_project",
+    "load_hex_project_files",
 ]
