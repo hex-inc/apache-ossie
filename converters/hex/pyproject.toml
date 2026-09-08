@@ -44,7 +44,7 @@ keywords = [
 ]
 dependencies = [
     "apache-ossie>=0.2.0.dev0",
-    "hex-sl-utils>=0.2.0.dev0",
+    "hex-sl-utils>=0.3.0.dev0",
     "pydantic>=2.13.4",
     "pydantic-core>=2.46.4",
     "PyYAML>=6.0",
@@ -90,3 +90,4 @@ include = ["src", "tests"]
 # package for now. Remove this block once apache-ossie is published to PyPI.
 [tool.uv.sources]
 apache-ossie = { path = "../../python", editable = true }
+hex-sl-utils = { path = "../../../hex-sl-utils/packages/hex-sl-utils", editable = true }

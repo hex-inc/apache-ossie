@@ -40,10 +40,10 @@ def convert_ossie_to_hex(
     """Convert an Ossie document to a Hex semantic project.
 
     Args:
-        - `input`: A path to the Ossie document file.
-        - `output`: Optional. A path to the desired output directory. If not provided,
+        input: A path to the Ossie document file.
+        output (optional): A path to the desired output directory. If not provided,
           the output is not written to a file.
-        - `dialect`: Optional. An Ossie dialect to prefer to pick expressions from (only
+        dialect: Optional. An Ossie dialect to prefer to pick expressions from (only
           a single dialect is preserved in Hex expressions). If not provided, the `ANSI_SQL`
           dialect will be used when available. Otherwise, the first dialect expression is used.
 
@@ -54,7 +54,7 @@ def convert_ossie_to_hex(
     ctx = ExportContext()
 
     with ctx.phase_scope("load"):
-        ossie_document = load_ossie_document(document_path=input, ctx=ctx)
+        ossie_document = load_ossie_document(input, ctx=ctx)
         ossie_dialect = load_ossie_dialect(dialect, ctx=ctx)
 
     with ctx.phase_scope("convert"):
