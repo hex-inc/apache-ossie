@@ -1,0 +1,44 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+from pathlib import Path
+
+from ..hex import HexDialectName, HexProject
+from ..hex import load_hex_project as _load_hex_project
+from .context import ImportContext
+
+
+def load_hex_project(
+    *,
+    project_dir: Path | str,
+    project_name: str | None,
+    dialect_name: HexDialectName,
+    ctx: ImportContext,
+) -> HexProject:
+    hex_loaded_project = _load_hex_project(
+        project_dir=project_dir,
+        project_name=project_name or "untitled",
+        dialect_name=dialect_name,
+    )
+    hex_project = hex_loaded_project.project
+    for problem in hex_loaded_project.problems:
+        ctx.report_problem(
+            severity=problem.severity,
+            message=problem.message,
+            path=problem.cause_paths[0],  # TODO: handle multiple cause paths
+        )
+    return hex_project

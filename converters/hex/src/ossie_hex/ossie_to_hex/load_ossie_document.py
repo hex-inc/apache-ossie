@@ -29,8 +29,8 @@ from .load_ossie_semantic_model import load_ossie_semantic_model
 
 
 def load_ossie_document(
+    document_path: Path | str,
     *,
-    document_path: str | Path,
     ctx: ExportContext,
 ) -> OssieDocument | None:
     """Parse file contents as an Ossie document.
