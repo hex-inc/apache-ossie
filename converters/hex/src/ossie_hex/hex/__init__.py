@@ -16,6 +16,10 @@
 # under the License.
 
 from ._brand import (
+    HEX_DIALECT_NAMES,
+    HexAggregateExpression,
+    HexAggregateFuncName,
+    HexCanonicalDialectName,
     HexDataType,
     HexDialect,
     HexDialectName,
@@ -27,12 +31,21 @@ from ._brand import (
     HexRelation,
     HexRelationType,
     HexResource,
+    HexScalarExpression,
+    HexView,
     HexVisibility,
+    load_hex_project,
+    load_hex_project_files,
+    normalize_hex_dialect_name,
 )
 from .hex_sql import HexSql
 from .utils import is_temporal_hex_datatype
 
 __all__ = [
+    "HEX_DIALECT_NAMES",
+    "HexAggregateExpression",
+    "HexAggregateFuncName",
+    "HexCanonicalDialectName",
     "HexDataType",
     "HexDialect",
     "HexDialectName",
@@ -44,7 +57,12 @@ __all__ = [
     "HexRelation",
     "HexRelationType",
     "HexResource",
+    "HexScalarExpression",
     "HexSql",
+    "HexView",
     "HexVisibility",
     "is_temporal_hex_datatype",
+    "load_hex_project",
+    "load_hex_project_files",
+    "normalize_hex_dialect_name",
 ]
